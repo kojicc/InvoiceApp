@@ -1,0 +1,66 @@
+.navSection {
+  flex: 1;
+}
+
+.navLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.navButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  color: var(--mantine-color-gray-7);
+}
+
+.navButton:hover {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+.navButton.active {
+  background: var(--mantine-color-indigo-1);
+  color: var(--mantine-color-indigo-7);
+  font-weight: 600;
+}
+
+.userButton {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease;
+  background: transparent;
+  border: none;
+  width: auto;
+}
+
+.userButton:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+.userInfo {
+  flex: 1;
+}
+
+[data-mantine-color-scheme='dark'] .navButton {
+  color: var(--mantine-color-dark-1);
+}
+
+[data-mantine-color-scheme='dark'] .navButton:hover {
+  background: var(--mantine-color-dark-6);
+  color: var(--mantine-color-white);
+}
+
+[data-mantine-color-scheme='dark'] .navButton.active {
+  background: var(--mantine-color-indigo-9);
+  color: var(--mantine-color-indigo-1);
+}
+
+[data-mantine-color-scheme='dark'] .userButton:hover {
+  background: var(--mantine-color-dark-6);
+}
