@@ -26,9 +26,12 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import useSWR, { mutate } from 'swr';
 import api from '../lib/axios';
 import { useAuthStore } from '../state/useAuthStore';
 import { useCurrencyStore } from '../state/useCurrencyStore';
+
+const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 interface UserProfile {
   id: number;
@@ -43,8 +46,7 @@ interface UserProfile {
 const Settings: React.FC = () => {
   const { user: authUser, login } = useAuthStore();
   const { currentCurrency, setCurrency } = useCurrencyStore();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: profile, error, isLoading, mutate: mutateProfile } = useSWR('/api/profile', fetcher);
   const [saving, setSaving] = useState(false);
 
   // Profile form state
@@ -62,33 +64,17 @@ const Settings: React.FC = () => {
     notifications: true,
   });
 
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/profile');
-      const userData = response.data;
-      setProfile(userData);
+  // Update form when profile data is loaded
+  useEffect(() => {
+    if (profile) {
       setProfileForm({
-        username: userData.username,
-        email: userData.email,
+        username: profile.username,
+        email: profile.email,
         newPassword: '',
         confirmPassword: '',
       });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to load profile',
-        color: 'red',
-      });
-    } finally {
-      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  }, [profile]);
 
   const handleProfileUpdate = async () => {
     try {
@@ -115,16 +101,13 @@ const Settings: React.FC = () => {
 
       const response = await api.put('/api/profile', updateData);
 
-      // Update local profile state
+      // Update local state and auth context
       if (response.data.user) {
-        setProfile(response.data.user);
-        setProfileForm({
-          username: response.data.user.username,
-          email: response.data.user.email,
-          newPassword: '',
-          confirmPassword: '',
-        });
+        login(response.data.user, localStorage.getItem('token') || '');
       }
+
+      // Revalidate profile data
+      mutateProfile();
 
       notifications.show({
         title: 'Success',
@@ -138,9 +121,6 @@ const Settings: React.FC = () => {
         newPassword: '',
         confirmPassword: '',
       }));
-
-      // Refresh profile data
-      fetchProfile();
     } catch (error: any) {
       console.error('Error updating profile:', error);
       notifications.show({
@@ -200,7 +180,7 @@ const Settings: React.FC = () => {
       });
 
       // Refresh profile to get new avatar URL
-      fetchProfile();
+      mutateProfile();
     } catch (error) {
       console.error('Error uploading avatar:', error);
       notifications.show({
@@ -213,7 +193,7 @@ const Settings: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingOverlay visible overlayProps={{ radius: 'sm', blur: 2 }} />;
   }
 

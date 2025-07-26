@@ -1,13 +1,103 @@
-# Invoice Management Application
+# 🧾 Invoice Management System
 
-A full-stack invoice management application built with React, Next.js, Node.js, Express, and PostgreSQL.
+A comprehensive, full-stack invoice management application built with **Next.js**, **Node.js**, **TypeScript**, **Prisma**, and **PostgreSQL**. This system provides role-based access control, complete invoice lifecycle management, payment tracking, and comprehensive audit trails.
 
-## Features
+## ✨ Features
 
-### 🏠 Core Features
+### 🔐 Authentication & Authorization
+- **JWT-based authentication** with secure token management
+- **Role-based access control** (Admin/Client roles)
+- **Profile management** with avatar upload support
+- **Password management** with bcrypt encryption
 
-- **Dashboard**: Overview of invoice statistics, recent activities, and quick actions
-- **Invoice Management**: Create, view, edit, and delete invoices with PDF generation
+### 📊 Invoice Management
+- **Complete invoice lifecycle** (Create, Read, Update, Delete)
+- **Multi-currency support** with real-time exchange rates
+- **Recurring invoice automation** with flexible scheduling
+- **Invoice status tracking** (Paid, Partial, Unpaid, Overdue)
+- **PDF generation** with professional formatting
+- **Email notifications** for invoice delivery
+
+### 💰 Payment Processing
+- **Payment recording** with multiple methods (Card, Bank Transfer, Cash, Check)
+- **Partial payment support** with automatic status updates
+- **Payment history tracking** with detailed audit trails
+- **Balance calculations** and remaining amount tracking
+- **Payment method categorization**
+
+### 👥 Client Management
+- **Client profiles** with contact information
+- **Client-specific invoice filtering** for secure access
+- **Client communication history**
+- **Address and contact management**
+
+### 📈 Dashboard & Analytics
+- **Revenue tracking** with period comparisons
+- **Invoice status overview** with visual indicators
+- **Payment analytics** and trends
+- **Overdue invoice alerts**
+- **Recent activity feeds**
+
+### 🛡️ Security & Audit
+- **Comprehensive audit logging** for all user actions
+- **IP address tracking** for security monitoring
+- **Change history** with before/after state tracking
+- **Admin oversight capabilities**
+- **Secure file upload** with validation
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js** (v16 or higher)
+- **PostgreSQL** (v12 or higher)
+- **npm** or **yarn** package manager
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/kojicc/InvoiceApp.git
+   cd InvoiceApp
+   ```
+
+2. **Set up the backend**
+   ```bash
+   cd backend
+   npm install
+   
+   # Create .env file with your database credentials
+   echo "DATABASE_URL=\"postgresql://username:password@localhost:5432/invoiceapp\"
+   JWT_SECRET=\"your-super-secret-jwt-key\"
+   PORT=4000" > .env
+   
+   # Run database migrations
+   npx prisma migrate dev
+   
+   # Seed the database with sample data
+   npm run db:reset
+   ```
+
+3. **Set up the frontend**
+   ```bash
+   cd ../frontend
+   npm install
+   ```
+
+4. **Start the development servers**
+   
+   **Backend (Terminal 1):**
+   ```bash
+   cd backend
+   npm run dev
+   # Server running on http://localhost:4000
+   ```
+   
+   **Frontend (Terminal 2):**
+   ```bash
+   cd frontend
+   npm run dev
+   # App running on http://localhost:3000
+   ```
 - **Client Management**: Complete CRUD operations for client information
 - **User Authentication**: JWT-based authentication system with protected routes
 

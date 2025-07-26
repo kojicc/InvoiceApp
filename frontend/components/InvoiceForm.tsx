@@ -14,6 +14,7 @@ import {
 } from '@mantine/core';
 import { DatePicker } from '@mantine/dates';
 import { notifications } from '@mantine/notifications';
+import { mutate } from 'swr';
 import api from '../lib/axios';
 import { useInvoiceStore } from '../state/useInvoiceStore';
 
@@ -181,6 +182,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSuccess }) => {
         ...invoiceData,
         clientId: parseInt(invoiceData.clientId),
       });
+
+      // Revalidate invoices data using SWR mutate
+      mutate('/api/invoices');
 
       notifications.show({
         title: 'Success',

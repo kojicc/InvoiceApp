@@ -15,6 +15,7 @@ import {
   Card,
   Group,
   Modal,
+  Pagination,
   Progress,
   Select,
   Stack,
@@ -24,6 +25,7 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
+import useSWR, { mutate } from 'swr';
 import api from '../lib/axios';
 import { useAuthStore } from '../state/useAuthStore';
 import { useCurrencyStore } from '../state/useCurrencyStore';
@@ -31,6 +33,8 @@ import { useInvoiceStore } from '../state/useInvoiceStore';
 import EmailInvoice from './EmailInvoice';
 import PaymentForm from './PaymentForm';
 import PaymentHistory from './PaymentHistory';
+
+const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 interface Client {
   id: number;
@@ -59,8 +63,7 @@ interface Invoice {
 }
 
 export function InvoiceList() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: invoices = [], error, isLoading } = useSWR('/api/invoices', fetcher);
   const { user } = useAuthStore();
   const { currentCurrency, formatCurrency } = useCurrencyStore();
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
@@ -71,20 +74,10 @@ export function InvoiceList() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const isAdmin = user?.role === 'admin';
-
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const { data } = await api.get('/api/invoices');
-        setInvoices(data);
-      } catch (error) {
-        console.error('Error fetching invoices:', error);
-      }
-    };
-    fetchInvoices();
-  }, [setInvoices]);
 
   useEffect(() => {
     let filtered = [...invoices];
@@ -92,7 +85,7 @@ export function InvoiceList() {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(
-        (invoice) =>
+        (invoice: Invoice) =>
           invoice.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
           invoice.client.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -123,8 +116,30 @@ export function InvoiceList() {
     setFilteredInvoices(filtered);
   }, [invoices, searchTerm, sortBy, sortOrder]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
+
+  if (isLoading) {
+    return (
+      <Card shadow="sm" padding="lg" radius="md" withBorder>
+        <Text ta="center" py="xl">Loading invoices...</Text>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card shadow="sm" padding="lg" radius="md" withBorder>
+        <Text ta="center" py="xl" c="red">Error loading invoices</Text>
+      </Card>
+    );
+  }
+
   const handleStatusChange = async (invoiceId: number, newStatus: string) => {
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    const invoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
     if (!invoice) return;
 
     modals.openConfirmModal({
@@ -139,11 +154,9 @@ export function InvoiceList() {
       confirmProps: { color: newStatus === 'paid' ? 'green' : 'orange' },
       onConfirm: async () => {
         try {
-          await api.patch(`/invoices/${invoiceId}/status`, { status: newStatus });
-          const updatedInvoices = invoices.map((invoice) =>
-            invoice.id === invoiceId ? { ...invoice, status: newStatus } : invoice
-          );
-          setInvoices(updatedInvoices);
+          await api.patch(`/api/invoices/${invoiceId}/status`, { status: newStatus });
+          // Revalidate the data using SWR mutate
+          mutate('/api/invoices');
           notifications.show({
             title: 'Success',
             message: `Invoice status updated to ${newStatus}`,
@@ -162,7 +175,7 @@ export function InvoiceList() {
   };
 
   const handleExport = async (invoiceId: number) => {
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    const invoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
     if (!invoice) return;
 
     modals.openConfirmModal({
@@ -230,7 +243,7 @@ export function InvoiceList() {
   };
 
   const generateMockPDF = (invoiceId: number) => {
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    const invoice = invoices.find((inv: Invoice) => inv.id === invoiceId);
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -385,13 +398,8 @@ startxref
 
   const handlePaymentSuccess = async () => {
     setIsPaymentModalOpen(false);
-    // Refresh invoices to get updated payment info
-    try {
-      const { data } = await api.get('/api/invoices');
-      setInvoices(data);
-    } catch (error) {
-      console.error('Error refreshing invoices:', error);
-    }
+    // Revalidate the invoices data using SWR mutate
+    mutate('/api/invoices');
   };
 
   return (
@@ -434,21 +442,23 @@ startxref
             No invoices found for the selected filter.
           </Text>
         ) : (
-          <Table>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Invoice No</Table.Th>
-                <Table.Th>Client</Table.Th>
-                <Table.Th>Issue Date</Table.Th>
-                <Table.Th>Due Date</Table.Th>
-                <Table.Th>Amount</Table.Th>
-                <Table.Th>Payment Status</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {filteredInvoices.map((invoice: Invoice) => (
+          <>
+            <Table.ScrollContainer minWidth={800}>
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Invoice No</Table.Th>
+                    <Table.Th>Client</Table.Th>
+                    <Table.Th>Issue Date</Table.Th>
+                    <Table.Th>Due Date</Table.Th>
+                    <Table.Th>Amount</Table.Th>
+                    <Table.Th>Payment Status</Table.Th>
+                    <Table.Th>Status</Table.Th>
+                    <Table.Th>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {paginatedInvoices.map((invoice: Invoice) => (
                 <Table.Tr key={invoice.id}>
                   <Table.Td>{invoice.invoiceNo}</Table.Td>
                   <Table.Td>{invoice.client.name}</Table.Td>
@@ -546,8 +556,21 @@ startxref
                   </Table.Td>
                 </Table.Tr>
               ))}
-            </Table.Tbody>
-          </Table>
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+
+            {/* Pagination */}
+            <Group justify="center" mt="md">
+              <Pagination
+                value={currentPage}
+                onChange={setCurrentPage}
+                total={totalPages}
+                color="blue"
+                size="sm"
+              />
+            </Group>
+          </>
         )}
 
         {/* Payment Modals */}

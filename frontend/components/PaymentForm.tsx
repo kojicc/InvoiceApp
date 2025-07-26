@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { mutate } from 'swr';
 import api from '../lib/axios';
 
 interface PaymentFormProps {
@@ -50,6 +51,10 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ invoiceId, remainingBalance, 
         ...paymentData,
         invoiceId,
       });
+
+      // Revalidate related data using SWR mutate
+      mutate('/api/invoices');
+      mutate(`/api/payments/invoice/${invoiceId}`);
 
       notifications.show({
         title: 'Success',

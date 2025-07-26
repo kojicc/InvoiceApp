@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Group, Stack, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { mutate } from 'swr';
 import api from '../lib/axios';
-import { useInvoiceStore } from '../state/useInvoiceStore';
 
 interface ClientFormProps {
   onSuccess?: () => void;
@@ -15,12 +15,12 @@ interface ClientFormProps {
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => {
-  const { setClients } = useInvoiceStore();
   const [clientData, setClientData] = useState({
     name: '',
     contact: '',
     address: '',
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (editingClient) {
@@ -61,10 +61,11 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    setLoading(true);
     try {
       if (editingClient) {
         // Update existing client
-        await api.put(`/clients/${editingClient.id}`, clientData);
+        await api.put(`/api/clients/${editingClient.id}`, clientData);
         notifications.show({
           title: 'Success',
           message: 'Client updated successfully!',
@@ -79,6 +80,9 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
           color: 'green',
         });
       }
+
+      // Revalidate clients data using SWR mutate
+      mutate('/api/clients');
 
       // Reset form
       setClientData({
@@ -98,6 +102,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         message,
         color: 'red',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -128,7 +134,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         />
 
         <Group justify="flex-end">
-          <Button onClick={handleSubmit} size="md">
+          <Button 
+            onClick={handleSubmit} 
+            size="md"
+            loading={loading}
+            disabled={loading}
+          >
             {editingClient ? 'Update Client' : 'Create Client'}
           </Button>
         </Group>
