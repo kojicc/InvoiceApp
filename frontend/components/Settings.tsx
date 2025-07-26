@@ -51,7 +51,6 @@ const Settings: React.FC = () => {
   const [profileForm, setProfileForm] = useState({
     username: '',
     email: '',
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -72,7 +71,6 @@ const Settings: React.FC = () => {
       setProfileForm({
         username: userData.username,
         email: userData.email,
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });
@@ -104,15 +102,6 @@ const Settings: React.FC = () => {
         return;
       }
 
-      if (profileForm.newPassword && !profileForm.currentPassword) {
-        notifications.show({
-          title: 'Error',
-          message: 'Current password is required to set a new password',
-          color: 'red',
-        });
-        return;
-      }
-
       setSaving(true);
 
       const updateData: any = {
@@ -120,16 +109,21 @@ const Settings: React.FC = () => {
         email: profileForm.email,
       };
 
-      if (profileForm.newPassword && profileForm.currentPassword) {
-        updateData.currentPassword = profileForm.currentPassword;
+      if (profileForm.newPassword) {
         updateData.newPassword = profileForm.newPassword;
       }
 
       const response = await api.put('/api/profile', updateData);
 
-      // Update auth store with new user data
+      // Update local profile state
       if (response.data.user) {
-        await login(profileForm.email, profileForm.currentPassword || 'dummy');
+        setProfile(response.data.user);
+        setProfileForm({
+          username: response.data.user.username,
+          email: response.data.user.email,
+          newPassword: '',
+          confirmPassword: '',
+        });
       }
 
       notifications.show({
@@ -141,7 +135,6 @@ const Settings: React.FC = () => {
       // Clear password fields
       setProfileForm((prev) => ({
         ...prev,
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       }));
@@ -194,7 +187,7 @@ const Settings: React.FC = () => {
       formData.append('avatar', file);
 
       setSaving(true);
-      const response = await api.post('/api/avatar', formData, {
+      const response = await api.post('/api/profile/avatar', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -298,14 +291,6 @@ const Settings: React.FC = () => {
                 <Divider label="Change Password" labelPosition="center" />
 
                 <Group grow>
-                  <PasswordInput
-                    label="Current Password"
-                    placeholder="Enter current password"
-                    value={profileForm.currentPassword}
-                    onChange={(e) =>
-                      setProfileForm((prev) => ({ ...prev, currentPassword: e.target.value }))
-                    }
-                  />
                   <PasswordInput
                     label="New Password"
                     placeholder="Enter new password"

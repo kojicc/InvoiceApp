@@ -29,7 +29,7 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ invoiceId, onPaymentCha
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get(`/payments/invoice/${invoiceId}`);
+      const { data } = await api.get(`/api/payments/invoice/${invoiceId}`);
       setPayments(data);
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -49,7 +49,7 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ invoiceId, onPaymentCha
     }
 
     try {
-      await api.delete(`/payments/${paymentId}`);
+      await api.delete(`/api/payments/${paymentId}`);
       setPayments(payments.filter((p) => p.id !== paymentId));
       notifications.show({
         title: 'Success',

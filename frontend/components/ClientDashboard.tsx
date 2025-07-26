@@ -107,7 +107,7 @@ const ClientDashboard: React.FC = () => {
 
   const handleDownloadInvoice = async (invoiceId: number) => {
     try {
-      const response = await api.get(`/invoices/${invoiceId}/pdf`, {
+      const response = await api.get(`/api/invoices/${invoiceId}/pdf`, {
         responseType: 'blob',
       });
 

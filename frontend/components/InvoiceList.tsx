@@ -189,7 +189,7 @@ export function InvoiceList() {
             autoClose: false,
           });
 
-          const res = await api.get(`/invoices/${invoiceId}/pdf`, {
+          const res = await api.get(`/api/invoices/${invoiceId}/pdf`, {
             responseType: 'blob',
             timeout: 30000, // 30 second timeout for PDF generation
           });

@@ -166,7 +166,7 @@ startxref
 
   const handleDownloadTemplate = async (type: 'clients' | 'invoices') => {
     try {
-      const response = await api.get(`/data/template/${type}`, {
+      const response = await api.get(`/api/data/template/${type}`, {
         responseType: 'blob',
       });
 
@@ -206,7 +206,7 @@ startxref
     }
 
     try {
-      const response = await api.post(`/data/${importType}/import`, {
+      const response = await api.post(`/api/data/${importType}/import`, {
         csvData: csvData,
       });
 

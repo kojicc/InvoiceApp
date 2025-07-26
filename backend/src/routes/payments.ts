@@ -5,30 +5,6 @@ import { authenticate } from "../middleware/auth";
 const router = Router();
 const prisma = new PrismaClient();
 
-// Mock payment data store (replace with database once Prisma client is updated)
-let mockPayments: any[] = [
-  {
-    id: 1,
-    invoiceId: 1,
-    amount: 500.0,
-    method: "card",
-    notes: "Initial payment",
-    paidDate: new Date("2025-01-15"),
-    createdAt: new Date("2025-01-15"),
-  },
-  {
-    id: 2,
-    invoiceId: 1,
-    amount: 300.0,
-    method: "cash",
-    notes: "Partial payment",
-    paidDate: new Date("2025-01-20"),
-    createdAt: new Date("2025-01-20"),
-  },
-];
-
-let nextPaymentId = 3;
-
 // Add payment to invoice
 router.post("/", authenticate, async (req, res) => {
   try {
@@ -43,12 +19,12 @@ router.post("/", authenticate, async (req, res) => {
       return res.status(404).json({ message: "Invoice not found" });
     }
 
-    // Calculate current paid amount from mock payments
-    const existingPayments = mockPayments.filter(
-      (p) => p.invoiceId === invoiceId
-    );
+    // Calculate current paid amount from existing payments
+    const existingPayments = await prisma.payment.findMany({
+      where: { invoiceId: invoiceId },
+    });
     const currentPaidAmount = existingPayments.reduce(
-      (sum: number, payment: any) => sum + payment.amount,
+      (sum, payment) => sum + payment.amount,
       0
     );
     const newPaidAmount = currentPaidAmount + amount;
@@ -60,20 +36,18 @@ router.post("/", authenticate, async (req, res) => {
       });
     }
 
-    // Create payment record in mock store
-    const payment = {
-      id: nextPaymentId++,
-      amount,
-      method,
-      notes,
-      invoiceId,
-      paidDate: new Date(),
-      createdAt: new Date(),
-    };
+    // Create payment record in database
+    const payment = await prisma.payment.create({
+      data: {
+        amount,
+        method,
+        notes,
+        invoiceId,
+        paidDate: new Date(),
+      },
+    });
 
-    mockPayments.push(payment);
-
-    // Update invoice status (simplified - not updating paidAmount field until schema is fixed)
+    // Update invoice status and paid amount
     const newStatus =
       newPaidAmount >= invoice.total ? "paid" : "partially_paid";
 
@@ -81,6 +55,7 @@ router.post("/", authenticate, async (req, res) => {
       where: { id: invoiceId },
       data: {
         status: newStatus,
+        paidAmount: newPaidAmount,
       },
     });
 
@@ -96,13 +71,11 @@ router.get("/invoice/:invoiceId", authenticate, async (req, res) => {
   try {
     const { invoiceId } = req.params;
 
-    // Get payments from mock store
-    const payments = mockPayments
-      .filter((p) => p.invoiceId === Number(invoiceId))
-      .sort(
-        (a, b) =>
-          new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime()
-      );
+    // Get payments from database
+    const payments = await prisma.payment.findMany({
+      where: { invoiceId: parseInt(invoiceId) },
+      orderBy: { paidDate: 'desc' },
+    });
 
     res.json(payments);
   } catch (error) {
@@ -116,24 +89,26 @@ router.delete("/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find payment in mock store
-    const paymentIndex = mockPayments.findIndex((p) => p.id === Number(id));
+    // Find payment in database
+    const payment = await prisma.payment.findUnique({
+      where: { id: parseInt(id) },
+    });
 
-    if (paymentIndex === -1) {
+    if (!payment) {
       return res.status(404).json({ message: "Payment not found" });
     }
 
-    const payment = mockPayments[paymentIndex];
-
-    // Remove payment from mock store
-    mockPayments.splice(paymentIndex, 1);
+    // Delete payment from database
+    await prisma.payment.delete({
+      where: { id: parseInt(id) },
+    });
 
     // Recalculate invoice status
-    const remainingPayments = mockPayments.filter(
-      (p) => p.invoiceId === payment.invoiceId
-    );
+    const remainingPayments = await prisma.payment.findMany({
+      where: { invoiceId: payment.invoiceId },
+    });
     const newPaidAmount = remainingPayments.reduce(
-      (sum: number, p: any) => sum + p.amount,
+      (sum, p) => sum + p.amount,
       0
     );
 
@@ -154,6 +129,7 @@ router.delete("/:id", authenticate, async (req, res) => {
         where: { id: payment.invoiceId },
         data: {
           status: newStatus,
+          paidAmount: newPaidAmount,
         },
       });
     }

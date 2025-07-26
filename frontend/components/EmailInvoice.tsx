@@ -50,7 +50,7 @@ const EmailInvoice: React.FC<EmailInvoiceProps> = ({ invoiceId, defaultRecipient
 
   const loadPreview = async () => {
     try {
-      const { data } = await api.get(`/email/preview-invoice/${invoiceId}`);
+      const { data } = await api.get(`/api/email/preview-invoice/${invoiceId}`);
       setPreview(data);
       setIsPreviewOpen(true);
     } catch (error) {
@@ -91,7 +91,7 @@ const EmailInvoice: React.FC<EmailInvoiceProps> = ({ invoiceId, defaultRecipient
 
     try {
       setLoading(true);
-      const { data } = await api.post(`/email/send-invoice/${invoiceId}`, emailData);
+      const { data } = await api.post(`/api/email/send-invoice/${invoiceId}`, emailData);
 
       notifications.show({
         title: 'Email Sent!',

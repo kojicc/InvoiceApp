@@ -163,16 +163,13 @@ router.get("/:id/pdf", authenticate, async (req, res) => {
 
     // Check if client has access to this specific invoice
     if (user.role === "client") {
-      const client = await prisma.client.findFirst({
-        where: {
-          OR: [
-            { contact: user.email },
-            { contact: { contains: user.email.split("@")[1] } },
-          ],
-        },
+      // Get the user's associated clientId
+      const userRecord = await prisma.user.findUnique({
+        where: { id: user.userId },
+        include: { client: true },
       });
 
-      if (!client || invoice.clientId !== client.id) {
+      if (!userRecord || !userRecord.clientId || invoice.clientId !== userRecord.clientId) {
         return res
           .status(403)
           .json({ message: "Access denied to this invoice" });

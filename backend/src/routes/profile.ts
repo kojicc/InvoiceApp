@@ -91,7 +91,7 @@ router.get("/", authenticate, async (req, res) => {
 router.put("/", authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
-    const { username, email, currentPassword, newPassword } = req.body;
+    const { username, email, newPassword } = req.body;
 
     // Get current user data
     const currentUser = await prisma.user.findUnique({
@@ -122,18 +122,8 @@ router.put("/", authenticate, async (req, res) => {
       updateData.email = email;
     }
 
-    // Handle password change
-    if (currentPassword && newPassword) {
-      const isValidPassword = await comparePassword(
-        currentPassword,
-        currentUser.password
-      );
-      if (!isValidPassword) {
-        return res
-          .status(400)
-          .json({ message: "Current password is incorrect" });
-      }
-
+    // Handle password change (no current password required)
+    if (newPassword) {
       updateData.password = await hashPassword(newPassword);
     }
 
