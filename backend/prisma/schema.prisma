@@ -12,7 +12,9 @@ model User {
   username  String   @unique
   email     String   @unique
   password  String
-  role      String   @default("user") // "admin" or "user"
+  role      String   @default("client") // "admin" or "client"
+  clientId  Int?     // Reference to client if role is "client"
+  client    Client?  @relation(fields: [clientId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -23,21 +25,35 @@ model Client {
   name      String
   contact   String?
   address   String?
+  users     User[]   // Users associated with this client
   invoices  Invoice[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Invoice {
-  id         Int       @id @default(autoincrement())
-  invoiceNo  String    @unique
-  issueDate  DateTime
-  dueDate    DateTime
-  status     String    @default("unpaid")
-  total      Float
+  id           Int       @id @default(autoincrement())
+  invoiceNo    String    @unique
+  issueDate    DateTime
+  dueDate      DateTime
+  status       String    @default("unpaid")
+  total        Float
+  paidAmount   Float     @default(0)
+  currency     String    @default("USD")
+  exchangeRate Float     @default(1.0)
+  
+  // Recurring invoice fields
+  isRecurring     Boolean   @default(false)
+  recurringType   String?   // "monthly", "weekly", "quarterly", "yearly"
+  recurringDay    Int?      // Day of month for monthly (1-31)
+  recurringEndDate DateTime? // When to stop recurring
+  parentInvoiceId Int?      // Reference to original recurring invoice
+  nextDueDate     DateTime? // Next scheduled date for recurring
+  
   clientId   Int
   client     Client    @relation(fields: [clientId], references: [id])
   items      Item[]
+  payments   Payment[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 }
@@ -49,4 +65,27 @@ model Item {
   unitPrice  Float
   invoiceId  Int
   invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  method    String   @default("cash") // "cash", "card", "bank_transfer", "check"
+  notes     String?
+  paidDate  DateTime @default(now())
+  invoiceId Int
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String   // "create", "update", "delete"
+  entityType  String   // "invoice", "client", "payment"
+  entityId    Int
+  userId      Int?
+  changes     String?  // JSON string of changes
+  timestamp   DateTime @default(now())
+  ipAddress   String?
+  userAgent   String?
 }

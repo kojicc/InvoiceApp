@@ -32,14 +32,14 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         try {
           set({ isLoading: true });
-          const response = await api.post('/auth/login', { email, password });
-          const { token, username, role } = response.data;
+          const response = await api.post('/api/auth/login', { email, password });
+          const { token, user } = response.data;
 
           const userData = {
-            id: response.data.id || 1,
-            username,
-            email,
-            role,
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
           };
 
           // Set Authorization header for future requests
@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
 
           notifications.show({
             title: 'Login Successful',
-            message: `Welcome back, ${username}!`,
+            message: `Welcome back, ${user.username}!`,
             color: 'green',
           });
         } catch (error: any) {
@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (username: string, email: string, password: string) => {
         try {
           set({ isLoading: true });
-          await api.post('/auth/register', { username, email, password });
+          await api.post('/api/auth/register', { username, email, password });
 
           notifications.show({
             title: 'Registration Successful',

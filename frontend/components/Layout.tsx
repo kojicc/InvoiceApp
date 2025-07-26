@@ -33,9 +33,10 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { label: 'Dashboard', icon: IconHome, href: '/' },
-  { label: 'Clients', icon: IconUsers, href: '/clients' },
-  { label: 'Invoices', icon: IconFileInvoice, href: '/invoices' },
+  { label: 'Dashboard', icon: IconHome, href: '/', roles: ['admin', 'client'] },
+  { label: 'Clients', icon: IconUsers, href: '/clients', roles: ['admin'] },
+  { label: 'Invoices', icon: IconFileInvoice, href: '/invoices', roles: ['admin', 'client'] },
+  { label: 'Settings', icon: IconSettings, href: '/settings', roles: ['admin', 'client'] },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -49,7 +50,12 @@ export function Layout({ children }: LayoutProps) {
     router.push('/login');
   };
 
-  const navItems = navigation.map((item) => (
+  // Filter navigation items based on user role
+  const filteredNavigation = navigation.filter((item) =>
+    item.roles.includes(user?.role || 'client')
+  );
+
+  const navItems = filteredNavigation.map((item) => (
     <Link key={item.label} href={item.href} className={classes.navLink}>
       <UnstyledButton
         className={`${classes.navButton} ${router.pathname === item.href ? classes.active : ''}`}
@@ -88,7 +94,11 @@ export function Layout({ children }: LayoutProps) {
               <Menu.Target>
                 <UnstyledButton className={classes.userButton}>
                   <Group gap="sm">
-                    <Avatar size="sm" color="indigo">
+                    <Avatar
+                      size="sm"
+                      color="indigo"
+                      src={user?.avatarUrl ? `http://localhost:4000${user.avatarUrl}` : undefined}
+                    >
                       {user?.username?.charAt(0)?.toUpperCase()}
                     </Avatar>
                     <div className={classes.userInfo}>
@@ -107,6 +117,7 @@ export function Layout({ children }: LayoutProps) {
               <Menu.Dropdown>
                 <Menu.Item
                   leftSection={<IconSettings style={{ width: rem(14), height: rem(14) }} />}
+                  onClick={() => router.push('/settings')}
                 >
                   Settings
                 </Menu.Item>

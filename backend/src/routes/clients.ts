@@ -11,10 +11,27 @@ router.post("/", authenticate, authorize(["admin"]), async (req, res) => {
   res.json(client);
 });
 
-// Get all clients
-router.get("/", authenticate, async (req, res) => {
-  const clients = await prisma.client.findMany();
-  res.json(clients);
+// Get all clients (admin only)
+router.get("/", authenticate, authorize(["admin"]), async (req, res) => {
+  try {
+    const clients = await prisma.client.findMany({
+      include: {
+        invoices: {
+          select: {
+            id: true,
+            status: true,
+            total: true,
+            dueDate: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(clients);
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    res.status(500).json({ message: "Error fetching clients" });
+  }
 });
 
 // Update client

@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IconClock, IconFileInvoice, IconPlus } from '@tabler/icons-react';
-import { Button, Card, Group, Stack, Tabs, Text, Title } from '@mantine/core';
+import { Button, Card, Group, Modal, Stack, Tabs, Text, Title } from '@mantine/core';
+import InvoiceForm from '../components/InvoiceForm';
+import InvoiceList from '../components/InvoiceList';
 import { Layout } from '../components/Layout';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { useAuthStore } from '../state/useAuthStore';
 
 const InvoicesPageContent = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+
   return (
     <Layout>
       <Stack gap="lg">
@@ -12,15 +20,21 @@ const InvoicesPageContent = () => {
           <div>
             <Title order={1}>Invoice Management</Title>
             <Text c="dimmed" size="lg">
-              Create, manage, and track your invoices
+              {isAdmin ? 'Create, manage, and track your invoices' : 'View and track your invoices'}
             </Text>
           </div>
-          <Button leftSection={<IconPlus size={18} />} size="md">
-            Create New Invoice
-          </Button>
+          {isAdmin && (
+            <Button
+              leftSection={<IconPlus size={18} />}
+              size="md"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Create New Invoice
+            </Button>
+          )}
         </Group>
 
-        <Tabs defaultValue="all" variant="pills">
+        <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'all')} variant="pills">
           <Tabs.List>
             <Tabs.Tab value="all" leftSection={<IconFileInvoice size={16} />}>
               All Invoices
@@ -31,33 +45,36 @@ const InvoicesPageContent = () => {
             <Tabs.Tab value="paid" leftSection={<IconFileInvoice size={16} />}>
               Paid
             </Tabs.Tab>
+            <Tabs.Tab value="overdue" leftSection={<IconClock size={16} />}>
+              Overdue
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="all" pt="lg">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Text c="dimmed" ta="center" py="xl">
-                All invoices will be displayed here. This will include invoice list, filters, and
-                actions.
-              </Text>
-            </Card>
+            <InvoiceList />
           </Tabs.Panel>
 
           <Tabs.Panel value="pending" pt="lg">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Text c="dimmed" ta="center" py="xl">
-                Pending invoices will be displayed here.
-              </Text>
-            </Card>
+            <InvoiceList />
           </Tabs.Panel>
 
           <Tabs.Panel value="paid" pt="lg">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Text c="dimmed" ta="center" py="xl">
-                Paid invoices will be displayed here.
-              </Text>
-            </Card>
+            <InvoiceList />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="overdue" pt="lg">
+            <InvoiceList />
           </Tabs.Panel>
         </Tabs>
+
+        <Modal
+          opened={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Create New Invoice"
+          size="lg"
+        >
+          <InvoiceForm onSuccess={() => setIsModalOpen(false)} />
+        </Modal>
       </Stack>
     </Layout>
   );
@@ -65,7 +82,7 @@ const InvoicesPageContent = () => {
 
 export default function InvoicesPage() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['admin', 'client']}>
       <InvoicesPageContent />
     </ProtectedRoute>
   );

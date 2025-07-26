@@ -25,18 +25,22 @@ router.get("/", authenticate, async (req, res) => {
       });
     } else if (user.role === "client") {
       // Client can only see their own invoices
-      // Get the user's associated clientId
-      const userRecord = await prisma.user.findUnique({
-        where: { id: user.userId },
-        include: { client: true },
+      // Find client by matching email
+      const client = await prisma.client.findFirst({
+        where: {
+          OR: [
+            { contact: user.email },
+            { contact: { contains: user.email.split("@")[1] } },
+          ],
+        },
       });
 
-      if (!userRecord || !userRecord.clientId) {
+      if (!client) {
         return res.status(404).json({ message: "No associated client found" });
       }
 
       invoices = await prisma.invoice.findMany({
-        where: { clientId: userRecord.clientId },
+        where: { clientId: client.id },
         include: {
           client: true,
           items: true,

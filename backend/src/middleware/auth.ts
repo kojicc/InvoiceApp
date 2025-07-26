@@ -12,7 +12,11 @@ export const authenticate = (
   if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
-    const decoded = jwt.verify(token, SECRET_KEY) as { role: string };
+    const decoded = jwt.verify(token, SECRET_KEY) as {
+      userId: number;
+      role: string;
+      email: string;
+    };
     (req as any).user = decoded;
     next();
   } catch (error) {

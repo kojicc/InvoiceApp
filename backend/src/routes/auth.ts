@@ -7,30 +7,70 @@ const prisma = new PrismaClient();
 
 // Register
 router.post("/register", async (req, res) => {
-  const { username, email, password, role } = req.body;
-  const hashedPassword = await hashPassword(password);
+  try {
+    const { username, email, password, role } = req.body;
 
-  const user = await prisma.user.create({
-    data: { username, email, password: hashedPassword, role: role || "user" },
-  });
+    // Only allow "client" and "admin" roles
+    const validRole = role === "admin" ? "admin" : "client";
 
-  res.json({
-    message: "User registered",
-    user: { id: user.id, username: user.username },
-  });
+    const hashedPassword = await hashPassword(password);
+
+    const user = await prisma.user.create({
+      data: { username, email, password: hashedPassword, role: validRole },
+    });
+
+    const token = generateToken({
+      userId: user.id,
+      role: user.role,
+      email: user.email,
+    });
+
+    res.json({
+      message: "User registered successfully",
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Registration failed" });
+  }
 });
 
 // Login
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(400).json({ message: "User not found" });
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(400).json({ message: "User not found" });
 
-  const isValid = await comparePassword(password, user.password);
-  if (!isValid) return res.status(401).json({ message: "Invalid credentials" });
+    const isValid = await comparePassword(password, user.password);
+    if (!isValid)
+      return res.status(401).json({ message: "Invalid credentials" });
 
-  const token = generateToken({ id: user.id, role: user.role });
-  res.json({ token, role: user.role, username: user.username });
+    const token = generateToken({
+      userId: user.id,
+      role: user.role,
+      email: user.email,
+    });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Login failed" });
+  }
 });
 
 export default router;

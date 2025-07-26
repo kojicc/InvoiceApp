@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:4000', // backend URL
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // 30 second timeout for PDF generation
 });
 
 // Add response interceptor to handle errors globally
@@ -14,6 +14,12 @@ api.interceptors.response.use(
       localStorage.removeItem('auth-storage');
       window.location.href = '/login';
     }
+
+    // Handle timeout errors specifically
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      console.warn('Request timeout, API might not be available');
+    }
+
     return Promise.reject(error);
   }
 );
