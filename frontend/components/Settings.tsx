@@ -7,6 +7,7 @@ import {
   IconUpload,
   IconUser,
 } from '@tabler/icons-react';
+import useSWR, { mutate } from 'swr';
 import {
   Avatar,
   Badge,
@@ -26,7 +27,6 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import useSWR, { mutate } from 'swr';
 import api from '../lib/axios';
 import { useAuthStore } from '../state/useAuthStore';
 import { useCurrencyStore } from '../state/useCurrencyStore';
@@ -46,7 +46,12 @@ interface UserProfile {
 const Settings: React.FC = () => {
   const { user: authUser, login } = useAuthStore();
   const { currentCurrency, setCurrency } = useCurrencyStore();
-  const { data: profile, error, isLoading, mutate: mutateProfile } = useSWR('/api/profile', fetcher);
+  const {
+    data: profile,
+    error,
+    isLoading,
+    mutate: mutateProfile,
+  } = useSWR('/api/profile', fetcher);
   const [saving, setSaving] = useState(false);
 
   // Profile form state

@@ -74,7 +74,7 @@ router.get("/invoice/:invoiceId", authenticate, async (req, res) => {
     // Get payments from database
     const payments = await prisma.payment.findMany({
       where: { invoiceId: parseInt(invoiceId) },
-      orderBy: { paidDate: 'desc' },
+      orderBy: { paidDate: "desc" },
     });
 
     res.json(payments);

@@ -169,7 +169,11 @@ router.get("/:id/pdf", authenticate, async (req, res) => {
         include: { client: true },
       });
 
-      if (!userRecord || !userRecord.clientId || invoice.clientId !== userRecord.clientId) {
+      if (
+        !userRecord ||
+        !userRecord.clientId ||
+        invoice.clientId !== userRecord.clientId
+      ) {
         return res
           .status(403)
           .json({ message: "Access denied to this invoice" });

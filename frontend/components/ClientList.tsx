@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import { IconEdit, IconSearch, IconTrash } from '@tabler/icons-react';
+import useSWR, { mutate } from 'swr';
 import {
   ActionIcon,
   Button,
@@ -15,7 +16,6 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import useSWR, { mutate } from 'swr';
 import api from '../lib/axios';
 import { useInvoiceStore } from '../state/useInvoiceStore';
 import ClientForm from './ClientForm';
@@ -120,7 +120,9 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
   if (isLoading) {
     return (
       <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Text ta="center" py="xl">Loading clients...</Text>
+        <Text ta="center" py="xl">
+          Loading clients...
+        </Text>
       </Card>
     );
   }
@@ -128,7 +130,9 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
   if (error) {
     return (
       <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Text ta="center" py="xl" c="red">Error loading clients</Text>
+        <Text ta="center" py="xl" c="red">
+          Error loading clients
+        </Text>
       </Card>
     );
   }

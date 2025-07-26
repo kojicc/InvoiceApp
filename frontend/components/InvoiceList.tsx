@@ -8,6 +8,7 @@ import {
   IconMail,
   IconSearch,
 } from '@tabler/icons-react';
+import useSWR, { mutate } from 'swr';
 import {
   ActionIcon,
   Badge,
@@ -25,7 +26,6 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import useSWR, { mutate } from 'swr';
 import api from '../lib/axios';
 import { useAuthStore } from '../state/useAuthStore';
 import { useCurrencyStore } from '../state/useCurrencyStore';
@@ -125,7 +125,9 @@ export function InvoiceList() {
   if (isLoading) {
     return (
       <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Text ta="center" py="xl">Loading invoices...</Text>
+        <Text ta="center" py="xl">
+          Loading invoices...
+        </Text>
       </Card>
     );
   }
@@ -133,7 +135,9 @@ export function InvoiceList() {
   if (error) {
     return (
       <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Text ta="center" py="xl" c="red">Error loading invoices</Text>
+        <Text ta="center" py="xl" c="red">
+          Error loading invoices
+        </Text>
       </Card>
     );
   }
@@ -459,103 +463,104 @@ startxref
                 </Table.Thead>
                 <Table.Tbody>
                   {paginatedInvoices.map((invoice: Invoice) => (
-                <Table.Tr key={invoice.id}>
-                  <Table.Td>{invoice.invoiceNo}</Table.Td>
-                  <Table.Td>{invoice.client.name}</Table.Td>
-                  <Table.Td>{dayjs(invoice.issueDate).format('MMM DD, YYYY')}</Table.Td>
-                  <Table.Td>{dayjs(invoice.dueDate).format('MMM DD, YYYY')}</Table.Td>
-                  <Table.Td>{formatCurrency(invoice.total)}</Table.Td>
-                  <Table.Td>
-                    <Stack gap="xs">
-                      <Progress
-                        value={getPaymentProgress(invoice)}
-                        color={invoice.status === 'paid' ? 'green' : 'blue'}
-                        size="sm"
-                      />
-                      <Text size="xs" c="dimmed">
-                        {formatCurrency(invoice.paidAmount || 0)} / {formatCurrency(invoice.total)}
-                      </Text>
-                    </Stack>
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge color={getStatusColor(invoice.status, invoice.dueDate)}>
-                      {getStatusText(invoice.status, invoice.dueDate)}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Group gap="xs">
-                      {/* Download PDF - available to all users */}
-                      <ActionIcon
-                        variant="light"
-                        color="blue"
-                        onClick={() => handleExport(invoice.id)}
-                        title="Download PDF"
-                      >
-                        <IconDownload size={16} />
-                      </ActionIcon>
+                    <Table.Tr key={invoice.id}>
+                      <Table.Td>{invoice.invoiceNo}</Table.Td>
+                      <Table.Td>{invoice.client.name}</Table.Td>
+                      <Table.Td>{dayjs(invoice.issueDate).format('MMM DD, YYYY')}</Table.Td>
+                      <Table.Td>{dayjs(invoice.dueDate).format('MMM DD, YYYY')}</Table.Td>
+                      <Table.Td>{formatCurrency(invoice.total)}</Table.Td>
+                      <Table.Td>
+                        <Stack gap="xs">
+                          <Progress
+                            value={getPaymentProgress(invoice)}
+                            color={invoice.status === 'paid' ? 'green' : 'blue'}
+                            size="sm"
+                          />
+                          <Text size="xs" c="dimmed">
+                            {formatCurrency(invoice.paidAmount || 0)} /{' '}
+                            {formatCurrency(invoice.total)}
+                          </Text>
+                        </Stack>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge color={getStatusColor(invoice.status, invoice.dueDate)}>
+                          {getStatusText(invoice.status, invoice.dueDate)}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs">
+                          {/* Download PDF - available to all users */}
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleExport(invoice.id)}
+                            title="Download PDF"
+                          >
+                            <IconDownload size={16} />
+                          </ActionIcon>
 
-                      {/* Send Email - admin only */}
-                      {isAdmin && (
-                        <ActionIcon
-                          variant="light"
-                          color="violet"
-                          onClick={() => handleSendEmail(invoice)}
-                          title="Send Email"
-                        >
-                          <IconMail size={16} />
-                        </ActionIcon>
-                      )}
+                          {/* Send Email - admin only */}
+                          {isAdmin && (
+                            <ActionIcon
+                              variant="light"
+                              color="violet"
+                              onClick={() => handleSendEmail(invoice)}
+                              title="Send Email"
+                            >
+                              <IconMail size={16} />
+                            </ActionIcon>
+                          )}
 
-                      {/* Add Payment - admin only */}
-                      {isAdmin && getRemainingBalance(invoice) > 0 && (
-                        <ActionIcon
-                          variant="light"
-                          color="green"
-                          onClick={() => handleAddPayment(invoice)}
-                          title="Add Payment"
-                        >
-                          <IconCurrencyDollar size={16} />
-                        </ActionIcon>
-                      )}
+                          {/* Add Payment - admin only */}
+                          {isAdmin && getRemainingBalance(invoice) > 0 && (
+                            <ActionIcon
+                              variant="light"
+                              color="green"
+                              onClick={() => handleAddPayment(invoice)}
+                              title="Add Payment"
+                            >
+                              <IconCurrencyDollar size={16} />
+                            </ActionIcon>
+                          )}
 
-                      {/* View Payments - available to all users */}
-                      {(invoice.paidAmount || 0) > 0 && (
-                        <Button
-                          size="xs"
-                          variant="light"
-                          color="blue"
-                          onClick={() => handleViewPayments(invoice)}
-                        >
-                          View Payments
-                        </Button>
-                      )}
+                          {/* View Payments - available to all users */}
+                          {(invoice.paidAmount || 0) > 0 && (
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="blue"
+                              onClick={() => handleViewPayments(invoice)}
+                            >
+                              View Payments
+                            </Button>
+                          )}
 
-                      {/* Status Change - admin only */}
-                      {isAdmin && invoice.status === 'unpaid' && (
-                        <Button
-                          size="xs"
-                          variant="light"
-                          color="green"
-                          onClick={() => handleStatusChange(invoice.id, 'paid')}
-                        >
-                          Mark Paid
-                        </Button>
-                      )}
+                          {/* Status Change - admin only */}
+                          {isAdmin && invoice.status === 'unpaid' && (
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="green"
+                              onClick={() => handleStatusChange(invoice.id, 'paid')}
+                            >
+                              Mark Paid
+                            </Button>
+                          )}
 
-                      {isAdmin && invoice.status === 'paid' && (
-                        <Button
-                          size="xs"
-                          variant="light"
-                          color="orange"
-                          onClick={() => handleStatusChange(invoice.id, 'unpaid')}
-                        >
-                          Mark Unpaid
-                        </Button>
-                      )}
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
+                          {isAdmin && invoice.status === 'paid' && (
+                            <Button
+                              size="xs"
+                              variant="light"
+                              color="orange"
+                              onClick={() => handleStatusChange(invoice.id, 'unpaid')}
+                            >
+                              Mark Unpaid
+                            </Button>
+                          )}
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
                 </Table.Tbody>
               </Table>
             </Table.ScrollContainer>

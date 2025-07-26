@@ -182,7 +182,8 @@ const PaymentHistory: React.FC<PaymentHistoryProps> = ({ invoiceId, onPaymentCha
 
         <Group justify="space-between">
           <Text fw={500}>
-            Total Paid: ${payments.reduce((sum: number, p: Payment) => sum + p.amount, 0).toFixed(2)}
+            Total Paid: $
+            {payments.reduce((sum: number, p: Payment) => sum + p.amount, 0).toFixed(2)}
           </Text>
         </Group>
       </Stack>

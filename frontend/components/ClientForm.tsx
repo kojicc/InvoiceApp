@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { mutate } from 'swr';
 import { Button, Card, Group, Stack, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { mutate } from 'swr';
 import api from '../lib/axios';
 
 interface ClientFormProps {
@@ -134,12 +134,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         />
 
         <Group justify="flex-end">
-          <Button 
-            onClick={handleSubmit} 
-            size="md"
-            loading={loading}
-            disabled={loading}
-          >
+          <Button onClick={handleSubmit} size="md" loading={loading} disabled={loading}>
             {editingClient ? 'Update Client' : 'Create Client'}
           </Button>
         </Group>

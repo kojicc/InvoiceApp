@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { mutate } from 'swr';
 import { Button, Card, Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { mutate } from 'swr';
 import api from '../lib/axios';
 
 interface PaymentFormProps {
