@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { IconEye, IconMail } from '@tabler/icons-react';
+import { IconEye, IconMail, IconSend } from '@tabler/icons-react';
 import {
   Button,
   Card,
@@ -35,6 +35,7 @@ const EmailInvoice: React.FC<EmailInvoiceProps> = ({ invoiceId, defaultRecipient
     includeAttachment: true,
   });
   const [loading, setLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const [preview, setPreview] = useState<EmailPreview | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -123,6 +124,52 @@ const EmailInvoice: React.FC<EmailInvoiceProps> = ({ invoiceId, defaultRecipient
     }
   };
 
+  const handleTestEmail = async () => {
+    if (!emailData.recipientEmail.trim()) {
+      notifications.show({
+        title: 'Validation Error',
+        message: 'Please enter a recipient email to test',
+        color: 'red',
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailData.recipientEmail)) {
+      notifications.show({
+        title: 'Validation Error',
+        message: 'Please enter a valid email address',
+        color: 'red',
+      });
+      return;
+    }
+
+    try {
+      setTestLoading(true);
+      const { data } = await api.post('/api/email/test', {
+        to: emailData.recipientEmail,
+      });
+
+      notifications.show({
+        title: 'Test Email Sent!',
+        message: `Test email sent successfully to ${data.sentTo}`,
+        color: 'green',
+      });
+    } catch (error: any) {
+      console.error('Error sending test email:', error);
+      const message =
+        error.response?.data?.message ||
+        'Failed to send test email. Please check email configuration.';
+      notifications.show({
+        title: 'Test Failed',
+        message,
+        color: 'red',
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
     <>
       <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -165,14 +212,23 @@ const EmailInvoice: React.FC<EmailInvoiceProps> = ({ invoiceId, defaultRecipient
             onChange={(e) => handleInputChange('includeAttachment', e.currentTarget.checked)}
           />
 
-          <Group justify="flex-end">
+          <Group justify="space-between">
+            <Button
+              variant="light"
+              leftSection={<IconSend size={16} />}
+              onClick={handleTestEmail}
+              loading={testLoading}
+              size="sm"
+            >
+              Test Email Config
+            </Button>
             <Button
               leftSection={<IconMail size={16} />}
               onClick={handleSendEmail}
               size="md"
               loading={loading}
             >
-              Send Email
+              Send Invoice Email
             </Button>
           </Group>
         </Stack>

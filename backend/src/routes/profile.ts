@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client";
 import { authenticate } from "../middleware/auth";
 import { hashPassword, comparePassword } from "../utils/auth";
@@ -29,7 +29,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(
       path.extname(file.originalname).toLowerCase()
     );
@@ -74,7 +74,9 @@ router.get("/", authenticate, async (req, res) => {
 
     const avatarUrl =
       avatarFiles.length > 0
-        ? `/uploads/avatars/${avatarFiles[avatarFiles.length - 1]}`
+        ? `/uploads/avatars/${
+            avatarFiles[avatarFiles.length - 1]
+          }?v=${Date.now()}`
         : null;
 
     res.json({
@@ -150,12 +152,48 @@ router.put("/", authenticate, async (req, res) => {
   }
 });
 
+// Multer error handling middleware
+const handleMulterError = (
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "File too large. Maximum file size is 5MB.",
+        error: "FILE_TOO_LARGE",
+        maxSize: "5MB",
+      });
+    }
+    if (err.code === "LIMIT_FILE_COUNT") {
+      return res.status(400).json({
+        message: "Too many files. Only one file is allowed.",
+        error: "TOO_MANY_FILES",
+      });
+    }
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      return res.status(400).json({
+        message: "Unexpected field name. Use 'avatar' as field name.",
+        error: "UNEXPECTED_FIELD",
+      });
+    }
+    return res.status(400).json({
+      message: "File upload error: " + err.message,
+      error: "UPLOAD_ERROR",
+    });
+  }
+  next(err);
+};
+
 // Upload avatar
 router.post(
   "/avatar",
   authenticate,
   upload.single("avatar"),
-  async (req, res) => {
+  handleMulterError,
+  async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
 
@@ -177,7 +215,7 @@ router.post(
         });
       }
 
-      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      const avatarUrl = `/uploads/avatars/${req.file.filename}?v=${Date.now()}`;
 
       res.json({
         message: "Avatar uploaded successfully",

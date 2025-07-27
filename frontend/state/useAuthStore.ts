@@ -16,6 +16,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isHydrated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isLoading: false,
       isAuthenticated: false,
+      isHydrated: false,
 
       login: async (email: string, password: string) => {
         try {
@@ -97,6 +99,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         delete api.defaults.headers.common['Authorization'];
+        // Clear any stored return path
+        sessionStorage.removeItem('returnTo');
         set({
           user: null,
           token: null,
@@ -120,11 +124,20 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        console.log('🔄 Auth store rehydrating...', { state, error });
+
         // Set the auth header when rehydrating from storage
         if (state?.token) {
           api.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+          console.log('✅ Auth header set from rehydrated token');
         }
+
+        // Always set hydrated to true after rehydration attempt
+        setTimeout(() => {
+          useAuthStore.setState({ isHydrated: true });
+          console.log('✅ Auth store hydration complete');
+        }, 0);
       },
     }
   )

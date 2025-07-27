@@ -17,15 +17,18 @@ import {
   Divider,
   FileInput,
   Group,
+  Image,
   LoadingOverlay,
   PasswordInput,
   Select,
+  SimpleGrid,
   Stack,
   Tabs,
   Text,
   TextInput,
   Title,
 } from '@mantine/core';
+import { Dropzone, FileWithPath, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { notifications } from '@mantine/notifications';
 import api from '../lib/axios';
 import { useAuthStore } from '../state/useAuthStore';
@@ -53,6 +56,14 @@ const Settings: React.FC = () => {
     mutate: mutateProfile,
   } = useSWR('/api/profile', fetcher);
   const [saving, setSaving] = useState(false);
+  const [avatarFiles, setAvatarFiles] = useState<FileWithPath[]>([]);
+
+  // Helper function to construct full avatar URL
+  const getAvatarUrl = (avatarUrl: string | null | undefined) => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    return `http://localhost:4000${avatarUrl}`;
+  };
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -72,6 +83,9 @@ const Settings: React.FC = () => {
   // Update form when profile data is loaded
   useEffect(() => {
     if (profile) {
+      console.log('Profile data:', profile);
+      console.log('Avatar URL:', profile.avatarUrl);
+      console.log('Full Avatar URL:', getAvatarUrl(profile.avatarUrl));
       setProfileForm({
         username: profile.username,
         email: profile.email,
@@ -106,13 +120,12 @@ const Settings: React.FC = () => {
 
       const response = await api.put('/api/profile', updateData);
 
-      // Update local state and auth context
-      if (response.data.user) {
-        login(response.data.user, localStorage.getItem('token') || '');
-      }
+      // Update local state and auth context - FIX: Don't call login() which causes refresh
+      // Instead, just revalidate the profile data and update SWR cache
+      await mutateProfile();
 
-      // Revalidate profile data
-      mutateProfile();
+      // Also update the global user data in other SWR caches that might use it
+      await mutate('/api/auth/me');
 
       notifications.show({
         title: 'Success',
@@ -164,8 +177,34 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleAvatarUpload = async (file: File | null) => {
-    if (!file) return;
+  const handleAvatarUpload = async (files: FileWithPath[]) => {
+    if (!files || files.length === 0) return;
+
+    const file = files[0]; // Take the first file
+
+    // Check file size on frontend (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      notifications.show({
+        title: 'File Too Large',
+        message: `File size must be less than 5MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`,
+        color: 'red',
+      });
+      setAvatarFiles([]);
+      return;
+    }
+
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      notifications.show({
+        title: 'Invalid File Type',
+        message: 'Please upload a valid image file (JPEG, PNG, GIF, or WebP).',
+        color: 'red',
+      });
+      setAvatarFiles([]);
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -184,15 +223,52 @@ const Settings: React.FC = () => {
         color: 'green',
       });
 
-      // Refresh profile to get new avatar URL
-      mutateProfile();
-    } catch (error) {
+      // Force refresh profile to get new avatar URL - invalidate all profile-related caches
+      await mutateProfile();
+      await mutate('/api/profile');
+      await mutate('/api/auth/me');
+
+      // Add a small delay and force another refresh to ensure avatar updates
+      setTimeout(async () => {
+        await mutateProfile();
+      }, 1000);
+
+      // Clear the preview files after successful upload
+      setAvatarFiles([]);
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to upload avatar',
-        color: 'red',
-      });
+
+      // Handle specific error types from backend
+      const errorData = error.response?.data;
+      if (errorData?.error === 'FILE_TOO_LARGE') {
+        notifications.show({
+          title: 'File Too Large',
+          message:
+            errorData.message || `File size must be less than ${errorData.maxSize || '5MB'}.`,
+          color: 'red',
+        });
+      } else if (errorData?.error === 'TOO_MANY_FILES') {
+        notifications.show({
+          title: 'Too Many Files',
+          message: errorData.message || 'Only one file is allowed.',
+          color: 'red',
+        });
+      } else if (errorData?.error === 'UNEXPECTED_FIELD') {
+        notifications.show({
+          title: 'Upload Error',
+          message: errorData.message || 'Invalid field name.',
+          color: 'red',
+        });
+      } else {
+        notifications.show({
+          title: 'Error',
+          message: errorData?.message || 'Failed to upload avatar',
+          color: 'red',
+        });
+      }
+
+      // Clear preview files on error
+      setAvatarFiles([]);
     } finally {
       setSaving(false);
     }
@@ -239,17 +315,53 @@ const Settings: React.FC = () => {
                 </Group>
 
                 <Group gap="xl">
-                  <div>
-                    <Avatar src={profile?.avatarUrl} size={80} radius="md" />
-                    <FileInput
-                      placeholder="Upload avatar"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      size="xs"
-                      mt="xs"
-                      style={{ width: '120px' }}
-                    />
-                  </div>
+                  <Stack gap="xs">
+                    <Avatar src={getAvatarUrl(profile?.avatarUrl)} size={80} radius="md" />
+
+                    {/* Dropzone for avatar upload with preview */}
+                    <Dropzone
+                      accept={IMAGE_MIME_TYPE}
+                      onDrop={(files) => {
+                        setAvatarFiles(files);
+                        if (files.length > 0) {
+                          handleAvatarUpload(files);
+                        }
+                      }}
+                      maxFiles={1}
+                      style={{ width: '120px', minHeight: '80px' }}
+                    >
+                      <Text ta="center" size="xs" mb="xs">
+                        Drop avatar here or click
+                      </Text>
+                      <Text ta="center" size="xs" c="dimmed">
+                        Max: 5MB
+                      </Text>
+                      <Text ta="center" size="xs" c="dimmed">
+                        JPEG, PNG, GIF, WebP
+                      </Text>
+                    </Dropzone>
+
+                    {/* Preview of selected image before upload */}
+                    {avatarFiles.length > 0 && (
+                      <div style={{ width: '120px' }}>
+                        <Text size="xs" c="dimmed" mb="xs">
+                          Preview:
+                        </Text>
+                        {avatarFiles.map((file, index) => {
+                          const imageUrl = URL.createObjectURL(file);
+                          return (
+                            <Image
+                              key={index}
+                              src={imageUrl}
+                              onLoad={() => URL.revokeObjectURL(imageUrl)}
+                              radius="md"
+                              style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+                  </Stack>
 
                   <Stack gap="md" style={{ flex: 1 }}>
                     <TextInput

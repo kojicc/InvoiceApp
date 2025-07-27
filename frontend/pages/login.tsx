@@ -9,7 +9,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      // Check if there's a stored return path
+      const returnTo = sessionStorage.getItem('returnTo');
+      if (returnTo) {
+        sessionStorage.removeItem('returnTo');
+        console.log('🔄 Redirecting to stored path:', returnTo);
+        router.push(returnTo);
+      } else {
+        console.log('🔄 Redirecting to dashboard');
+        router.push('/');
+      }
     }
   }, [isAuthenticated, router]);
 
