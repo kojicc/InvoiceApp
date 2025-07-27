@@ -1,4 +1,4 @@
-# Implementation Summary - Invoice Management Application
+## Implementation Summary - Invoice Management Application
 
 ## ✅ Completed Features Implementation
 
