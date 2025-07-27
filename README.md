@@ -3,6 +3,13 @@
 
 A comprehensive, full-stack invoice management application built with **Next.js**, **Node.js**, **TypeScript**, **Prisma**, and **PostgreSQL**. This system provides role-based access control, complete invoice lifecycle management, payment tracking, and comprehensive audit trails with modern UI/UX patterns including SWR for real-time data updates.
 
+## 📚 Latest Updates
+
+- **✅ Professional Resume Integration** - Added comprehensive resume documentation and Word formatting guide
+- **✅ Enhanced Database Documentation** - Updated Prisma documentation with comprehensive seeding and testing scenarios
+- **✅ Career Documentation** - Professional project presentation for portfolio and job applications
+- **✅ Business Value Documentation** - Detailed feature documentation highlighting business impact and technical achievements
+
 ## 🚀 Project Setup Instructions
 
 ### Prerequisites
@@ -637,3 +644,38 @@ The prioritization strategy focused on delivering a robust MVP first, then enhan
 - ✅ Scalable architecture for future enhancements
 
 This project showcases proficiency in modern web development practices, user experience design, and business application development.
+
+---
+
+## 📄 Project Documentation & Resume Integration
+
+### Resume Documentation
+
+This project includes professional resume materials showcasing the InvoiceApp development:
+
+- **`JEIKO_SY_RESUME_2025.txt`** - Complete professional resume in text format
+- **`JEIKO_SY_RESUME_WORD_FORMAT.txt`** - Microsoft Word formatting guide for creating professional resume documents
+
+### Resume Integration Notes
+
+The InvoiceApp project has been professionally documented and integrated into resume materials as a **Lead Full-Stack Developer (Freelance)** project, highlighting:
+
+- **Enterprise-grade architecture** using modern tech stack (TypeScript, Next.js, Node.js, PostgreSQL, Prisma)
+- **Advanced business features** including multi-currency support, recurring invoices, payment tracking, and audit logging
+- **Authentication & security** with JWT tokens, Google OAuth integration, and role-based access control
+- **Real-time capabilities** using SWR for data synchronization and responsive UI with Mantine components
+- **Professional PDF generation** and email integration for business workflows
+
+### Career Development Value
+
+This project demonstrates:
+- **Full-stack proficiency** across modern JavaScript ecosystem
+- **Database design** and ORM expertise with Prisma and PostgreSQL
+- **Authentication systems** including OAuth implementation
+- **Business logic implementation** for real-world invoice management scenarios
+- **UI/UX development** with responsive design and accessibility standards
+- **DevOps understanding** with environment configuration and deployment readiness
+
+---
+
+## 🎯 Conclusion
