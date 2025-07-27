@@ -8,15 +8,21 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
-  password  String
-  role      String   @default("client") // "admin" or "client"
-  clientId  Int?     // Reference to client if role is "client"
-  client    Client?  @relation(fields: [clientId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  username           String   @unique
+  email              String   @unique
+  password           String?  // Made optional for OAuth users who haven't set password
+  role               String   @default("client") // "admin" or "client"
+  clientId           Int?     // Reference to client if role is "client"
+  client             Client?  @relation(fields: [clientId], references: [id])
+  isEmailVerified    Boolean  @default(false)
+  emailVerificationToken String?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  googleId           String?  @unique // For Google OAuth
+  lastLogin          DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 
