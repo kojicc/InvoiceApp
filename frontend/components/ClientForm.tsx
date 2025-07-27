@@ -11,6 +11,7 @@ interface ClientFormProps {
     name: string;
     contact: string;
     address: string;
+    email?: string;
   } | null;
 }
 
@@ -19,6 +20,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
     name: '',
     contact: '',
     address: '',
+    email: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +30,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         name: editingClient.name,
         contact: editingClient.contact,
         address: editingClient.address,
+        email: editingClient.email || '',
       });
     }
   }, [editingClient]);
@@ -46,10 +49,21 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
       return false;
     }
 
-    if (!clientData.contact.trim()) {
+    if (!clientData.email.trim()) {
+      notifications.show({
+        title: 'Validation Error', 
+        message: 'Email address is required',
+        color: 'red',
+      });
+      return false;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(clientData.email)) {
       notifications.show({
         title: 'Validation Error',
-        message: 'Contact information is required',
+        message: 'Please enter a valid email address',
         color: 'red',
       });
       return false;
@@ -73,12 +87,22 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         });
       } else {
         // Create new client
-        await api.post('/api/clients', clientData);
-        notifications.show({
-          title: 'Success',
-          message: 'Client created successfully!',
-          color: 'green',
-        });
+        const response = await api.post('/api/clients', clientData);
+        const responseData = response.data;
+        
+        if (responseData.emailSent) {
+          notifications.show({
+            title: 'Client Created',
+            message: `${clientData.name} has been created successfully! Verification email sent to ${clientData.email}.`,
+            color: 'green',
+          });
+        } else {
+          notifications.show({
+            title: 'Client Created',
+            message: `${clientData.name} has been created, but verification email failed to send. Please manually provide login instructions.`,
+            color: 'yellow',
+          });
+        }
       }
 
       // Revalidate clients data using SWR mutate
@@ -89,6 +113,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         name: '',
         contact: '',
         address: '',
+        email: '',
       });
 
       if (onSuccess) {
@@ -119,11 +144,19 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         />
 
         <TextInput
+          label="Email Address"
+          placeholder="client@example.com"
+          value={clientData.email}
+          onChange={(e) => handleInputChange('email', e.target.value)}
+          required
+          description="An account will be created with this email. The client will receive verification instructions."
+        />
+
+        <TextInput
           label="Contact Information"
-          placeholder="Email or phone number"
+          placeholder="Phone number or additional contact info"
           value={clientData.contact}
           onChange={(e) => handleInputChange('contact', e.target.value)}
-          required
         />
 
         <TextInput

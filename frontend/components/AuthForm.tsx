@@ -11,7 +11,9 @@ import {
   Stack,
   Group,
   LoadingOverlay,
+  Divider,
 } from '@mantine/core';
+import { IconBrandGoogle } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { useAuthStore } from '../state/useAuthStore';
 import classes from './AuthForm.module.css';
@@ -40,6 +42,11 @@ export function AuthForm() {
       username: (value) => (!isLogin && (!value || value.length < 3) ? 'Username must be at least 3 characters' : null),
     },
   });
+
+  const handleGoogleSignIn = () => {
+    // Redirect to backend Google OAuth route
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/oauth/google`;
+  };
 
   const handleSubmit = async (values: AuthFormData) => {
     try {
@@ -122,6 +129,23 @@ export function AuthForm() {
             >
               {isLogin ? 'Sign In' : 'Create Account'}
             </Button>
+
+            {isLogin && (
+              <>
+                <Divider label="or" labelPosition="center" my="lg" />
+                
+                <Button 
+                  fullWidth 
+                  size="md" 
+                  variant="outline"
+                  leftSection={<IconBrandGoogle size={20} />}
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
+                >
+                  Sign in with Google
+                </Button>
+              </>
+            )}
           </Stack>
         </form>
 

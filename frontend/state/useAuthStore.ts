@@ -21,6 +21,8 @@ interface AuthState {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  setUser: (user: User) => void;
+  setToken: (token: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -115,6 +117,15 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
+      },
+
+      setUser: (user: User) => {
+        set({ user, isAuthenticated: true });
+      },
+
+      setToken: (token: string) => {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        set({ token });
       },
     }),
     {
