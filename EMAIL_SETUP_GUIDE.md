@@ -23,7 +23,7 @@ EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=true
 EMAIL_HOST_USER=reservoiacthm@gmail.com
-EMAIL_HOST_PASSWORD=ussz mccl gkrd bxkw
+EMAIL_HOST_PASSWORD=
 ```
 
 ## 🚀 Features
