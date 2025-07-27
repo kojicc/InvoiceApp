@@ -34,7 +34,23 @@ import EmailInvoice from './EmailInvoice';
 import PaymentForm from './PaymentForm';
 import PaymentHistory from './PaymentHistory';
 
-const fetcher = (url: string) => api.get(url).then((res) => res.data);
+const fetcher = (url: string) => {
+  console.log('📊 InvoiceList: Fetching invoices from:', url);
+  return api
+    .get(url)
+    .then((res) => {
+      console.log('✅ InvoiceList: Successfully fetched invoices:', res.data.length, 'items');
+      return res.data;
+    })
+    .catch((error) => {
+      console.error(
+        '❌ InvoiceList: Error fetching invoices:',
+        error.response?.status,
+        error.response?.data
+      );
+      throw error;
+    });
+};
 
 interface Client {
   id: number;
@@ -63,8 +79,12 @@ interface Invoice {
 }
 
 export function InvoiceList() {
-  const { data: invoices = [], error, isLoading } = useSWR('/api/invoices', fetcher);
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const {
+    data: invoices = [],
+    error,
+    isLoading,
+  } = useSWR(isAuthenticated ? '/api/invoices' : null, fetcher);
   const { currentCurrency, formatCurrency } = useCurrencyStore();
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

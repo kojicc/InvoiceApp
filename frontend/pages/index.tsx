@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
 import AdminDashboard from '../components/AdminDashboard';
 import ClientDashboard from '../components/ClientDashboard';
 import { Layout } from '../components/Layout';
@@ -27,15 +25,6 @@ function DashboardPage() {
 }
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
   return (
     <ProtectedRoute>
       <DashboardPage />

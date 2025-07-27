@@ -21,6 +21,12 @@ router.get(
       const user = req.user as any;
 
       // Generate JWT token
+      const jwtSecret = process.env.JWT_SECRET!;
+      console.log(
+        "🔑 OAuth: Using JWT_SECRET for token generation:",
+        jwtSecret.substring(0, 10) + "..."
+      );
+
       const token = jwt.sign(
         {
           userId: user.id,
@@ -29,9 +35,11 @@ router.get(
           role: user.role,
           clientId: user.clientId,
         },
-        process.env.JWT_SECRET!,
+        jwtSecret,
         { expiresIn: "7d" }
       );
+
+      console.log("✅ OAuth token generated successfully for user:", user.id);
 
       // Update last login
       await prisma.user.update({

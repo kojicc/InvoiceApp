@@ -57,6 +57,14 @@ router.get("/", authenticate, async (req, res) => {
         role: true,
         createdAt: true,
         updatedAt: true,
+        client: {
+          select: {
+            id: true,
+            name: true,
+            contact: true,
+            address: true,
+          },
+        },
       },
     });
 
@@ -93,18 +101,19 @@ router.get("/", authenticate, async (req, res) => {
 router.put("/", authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
-    const { username, email, newPassword } = req.body;
+    const { username, email, newPassword, address } = req.body;
 
     // Get current user data
     const currentUser = await prisma.user.findUnique({
       where: { id: user.userId },
+      include: { client: true },
     });
 
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prepare update data
+    // Prepare update data for user
     const updateData: any = {};
 
     if (username && username !== currentUser.username) {
@@ -129,6 +138,18 @@ router.put("/", authenticate, async (req, res) => {
       updateData.password = await hashPassword(newPassword);
     }
 
+    // Handle address update for client users
+    if (
+      address !== undefined &&
+      currentUser.role === "client" &&
+      currentUser.clientId
+    ) {
+      await prisma.client.update({
+        where: { id: currentUser.clientId },
+        data: { address },
+      });
+    }
+
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id: user.userId },
@@ -139,6 +160,14 @@ router.put("/", authenticate, async (req, res) => {
         email: true,
         role: true,
         updatedAt: true,
+        client: {
+          select: {
+            id: true,
+            name: true,
+            contact: true,
+            address: true,
+          },
+        },
       },
     });
 

@@ -6,7 +6,7 @@ import { useAuthStore } from '../../state/useAuthStore';
 
 export default function OAuthCallback() {
   const router = useRouter();
-  const { setUser, setToken } = useAuthStore();
+  const { setAuthData } = useAuthStore();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -25,18 +25,26 @@ export default function OAuthCallback() {
 
         if (token && typeof token === 'string') {
           try {
+            console.log('🔍 OAuth Callback Debug:', { token: token.substring(0, 50) + '...' });
+
             // Decode JWT to get user info
             const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('📝 JWT Payload:', payload);
 
-            // Set authentication state
-            setToken(token);
-            setUser({
+            // Create user object
+            const user = {
               id: payload.userId,
               username: payload.username,
               email: payload.email,
               role: payload.role,
               clientId: payload.clientId,
-            });
+            };
+
+            console.log('👤 User object:', user);
+
+            // Set authentication state atomically
+            setAuthData(user, token);
+            console.log('✅ Auth data set successfully');
 
             notifications.show({
               title: 'Welcome!',
@@ -44,8 +52,10 @@ export default function OAuthCallback() {
               color: 'green',
             });
 
-            // Redirect to dashboard
-            router.push('/');
+            // Small delay to ensure state is set before redirect
+            setTimeout(() => {
+              router.push('/');
+            }, 100);
           } catch (jwtError) {
             console.error('JWT parsing error:', jwtError);
             throw new Error('Invalid token format');
@@ -67,7 +77,7 @@ export default function OAuthCallback() {
     if (router.isReady) {
       handleOAuthCallback();
     }
-  }, [router.isReady, router.query, setUser, setToken, router]);
+  }, [router.isReady, router.query, setAuthData, router]);
 
   return (
     <Center h="100vh">
