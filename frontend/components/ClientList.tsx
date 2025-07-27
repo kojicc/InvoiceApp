@@ -81,40 +81,136 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
   };
 
   const handleDelete = async (clientId: number, clientName: string) => {
-    modals.openConfirmModal({
-      title: 'Delete Client',
-      children: (
-        <Text size="sm">
-          Are you sure you want to delete client <strong>{clientName}</strong>?
-          <br />
-          <Text size="xs" c="dimmed" mt="xs">
-            This action cannot be undone. All associated invoices and data will be affected.
-          </Text>
-        </Text>
-      ),
-      labels: { confirm: 'Delete Client', cancel: 'Cancel' },
-      confirmProps: { color: 'red' },
-      onConfirm: async () => {
-        try {
-          await api.delete(`/api/clients/${clientId}`);
-          // Revalidate clients data using SWR mutate
-          mutate('/api/clients');
-          notifications.show({
-            title: 'Success',
-            message: `Client "${clientName}" deleted successfully`,
-            color: 'green',
-          });
-        } catch (error: any) {
-          console.error('Error deleting client:', error);
-          const message = error.response?.data?.message || 'Failed to delete client';
-          notifications.show({
-            title: 'Error',
-            message,
-            color: 'red',
-          });
-        }
-      },
-    });
+    // First check if client has unpaid invoices
+    try {
+      const response = await api.get(`/api/clients/${clientId}/invoices`);
+      const invoices = response.data;
+      const unpaidInvoices = invoices.filter((invoice: any) =>
+        ['unpaid', 'overdue', 'pending'].includes(invoice.status)
+      );
+
+      if (unpaidInvoices.length > 0) {
+        modals.openConfirmModal({
+          title: 'Cannot Delete Client',
+          children: (
+            <Stack gap="sm">
+              <Text size="sm">
+                <strong>{clientName}</strong> has {unpaidInvoices.length} unpaid invoice(s) and
+                cannot be deleted.
+              </Text>
+              <Text size="xs" c="dimmed">
+                Please settle all unpaid invoices before attempting to delete this client:
+              </Text>
+              <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                {unpaidInvoices.slice(0, 3).map((invoice: any) => (
+                  <li
+                    key={invoice.id}
+                    style={{ fontSize: '12px', color: 'var(--mantine-color-dimmed)' }}
+                  >
+                    Invoice #{invoice.invoiceNo} - ${invoice.total} ({invoice.status})
+                  </li>
+                ))}
+                {unpaidInvoices.length > 3 && (
+                  <li style={{ fontSize: '12px', color: 'var(--mantine-color-dimmed)' }}>
+                    ...and {unpaidInvoices.length - 3} more
+                  </li>
+                )}
+              </ul>
+            </Stack>
+          ),
+          labels: { confirm: 'Understood', cancel: null },
+          confirmProps: { color: 'blue' },
+          cancelProps: { style: { display: 'none' } },
+        });
+        return;
+      }
+
+      // Check total data that will be deleted
+      const totalInvoices = invoices.length;
+      const hasData = totalInvoices > 0;
+
+      modals.openConfirmModal({
+        title: 'Delete Client',
+        children: (
+          <Stack gap="sm">
+            <Text size="sm">
+              Are you sure you want to delete client <strong>{clientName}</strong>?
+            </Text>
+            {hasData && (
+              <>
+                <Text size="sm" c="orange">
+                  ⚠️ This will also permanently delete:
+                </Text>
+                <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                  <li style={{ fontSize: '14px' }}>
+                    {totalInvoices} invoice(s) and all related data
+                  </li>
+                  <li style={{ fontSize: '14px' }}>All payment records</li>
+                  <li style={{ fontSize: '14px' }}>
+                    All user accounts associated with this client
+                  </li>
+                </ul>
+              </>
+            )}
+            <Text size="xs" c="red" mt="sm">
+              This action cannot be undone and data will not be recoverable.
+            </Text>
+          </Stack>
+        ),
+        labels: { confirm: 'Delete Forever', cancel: 'Cancel' },
+        confirmProps: { color: 'red' },
+        onConfirm: async () => {
+          try {
+            const deleteResponse = await api.delete(`/api/clients/${clientId}`);
+            const deletedData = deleteResponse.data.deletedData;
+
+            // Revalidate clients data using SWR mutate
+            mutate('/api/clients');
+
+            notifications.show({
+              title: 'Client Deleted',
+              message: deletedData
+                ? `Deleted client "${deletedData.client}" and ${deletedData.invoices} invoice(s), ${deletedData.items} item(s), ${deletedData.payments} payment(s), and ${deletedData.users} user(s).`
+                : `Client "${clientName}" deleted successfully`,
+              color: 'green',
+            });
+          } catch (error: any) {
+            console.error('Error deleting client:', error);
+
+            const errorData = error.response?.data;
+
+            if (errorData?.error === 'UNPAID_INVOICES_EXIST') {
+              notifications.show({
+                title: 'Cannot Delete Client',
+                message: errorData.details || 'Client has unpaid invoices',
+                color: 'red',
+              });
+            } else if (errorData?.error === 'FOREIGN_KEY_CONSTRAINT') {
+              notifications.show({
+                title: 'Delete Failed',
+                message:
+                  'Client has associated data that prevents deletion. Please contact support.',
+                color: 'red',
+              });
+            } else {
+              const message = errorData?.message || 'Failed to delete client';
+              notifications.show({
+                title: 'Delete Failed',
+                message,
+                color: 'red',
+              });
+            }
+          }
+        },
+      });
+    } catch (error: any) {
+      console.error('Error checking client data:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to check client data. Please try again.',
+        color: 'red',
+      });
+    }
   };
 
   if (isLoading) {

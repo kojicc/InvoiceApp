@@ -1,16 +1,18 @@
 import { useState } from 'react';
+import { IconBrandGoogle } from '@tabler/icons-react';
 import {
   Anchor,
   Button,
   Checkbox,
+  Divider,
+  Group,
+  LoadingOverlay,
   Paper,
   PasswordInput,
+  Stack,
   Text,
   TextInput,
   Title,
-  Stack,
-  Group,
-  LoadingOverlay,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useAuthStore } from '../state/useAuthStore';
@@ -26,7 +28,7 @@ interface AuthFormData {
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const { login, register, isLoading } = useAuthStore();
-  
+
   const form = useForm<AuthFormData>({
     initialValues: {
       email: '',
@@ -37,9 +39,15 @@ export function AuthForm() {
     validate: {
       email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
       password: (value) => (value.length >= 6 ? null : 'Password must be at least 6 characters'),
-      username: (value) => (!isLogin && (!value || value.length < 3) ? 'Username must be at least 3 characters' : null),
+      username: (value) =>
+        !isLogin && (!value || value.length < 3) ? 'Username must be at least 3 characters' : null,
     },
   });
+
+  const handleGoogleSignIn = () => {
+    // Redirect to backend Google OAuth route
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/oauth/google`;
+  };
 
   const handleSubmit = async (values: AuthFormData) => {
     try {
@@ -62,17 +70,16 @@ export function AuthForm() {
   return (
     <div className={classes.wrapper}>
       <Paper className={classes.form} pos="relative">
-        <LoadingOverlay visible={isLoading} overlayProps={{ radius: "sm", blur: 2 }} />
-        
+        <LoadingOverlay visible={isLoading} overlayProps={{ radius: 'sm', blur: 2 }} />
+
         <Title order={2} className={classes.title}>
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </Title>
-        
+
         <Text c="dimmed" size="sm" ta="center" mb="lg">
-          {isLogin 
-            ? 'Sign in to your invoice management account' 
-            : 'Join our invoice management platform'
-          }
+          {isLogin
+            ? 'Sign in to your invoice management account'
+            : 'Join our invoice management platform'}
         </Text>
 
         <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -85,21 +92,21 @@ export function AuthForm() {
                 {...form.getInputProps('username')}
               />
             )}
-            
+
             <TextInput
               label="Email address"
               placeholder="Enter your email"
               size="md"
               {...form.getInputProps('email')}
             />
-            
+
             <PasswordInput
               label="Password"
               placeholder="Enter your password"
               size="md"
               {...form.getInputProps('password')}
             />
-            
+
             {isLogin && (
               <Group justify="space-between">
                 <Checkbox
@@ -112,21 +119,32 @@ export function AuthForm() {
                 </Anchor>
               </Group>
             )}
-            
-            <Button 
-              type="submit" 
-              fullWidth 
-              size="md" 
-              mt="lg"
-              disabled={isLoading}
-            >
+
+            <Button type="submit" fullWidth size="md" mt="lg" disabled={isLoading}>
               {isLogin ? 'Sign In' : 'Create Account'}
             </Button>
+
+            {isLogin && (
+              <>
+                <Divider label="or" labelPosition="center" my="lg" />
+
+                <Button
+                  fullWidth
+                  size="md"
+                  variant="outline"
+                  leftSection={<IconBrandGoogle size={20} />}
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
+                >
+                  Sign in with Google
+                </Button>
+              </>
+            )}
           </Stack>
         </form>
 
         <Text ta="center" mt="lg" size="sm">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
+          {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
           <Anchor fw={500} onClick={toggleMode} style={{ cursor: 'pointer' }}>
             {isLogin ? 'Create one' : 'Sign in'}
           </Anchor>

@@ -27,6 +27,7 @@ import {
   Text,
   TextInput,
   Title,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { Dropzone, FileWithPath, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { notifications } from '@mantine/notifications';
@@ -44,11 +45,18 @@ interface UserProfile {
   createdAt: string;
   updatedAt: string;
   avatarUrl?: string;
+  client?: {
+    id: number;
+    name: string;
+    contact: string;
+    address: string;
+  };
 }
 
 const Settings: React.FC = () => {
   const { user: authUser, login } = useAuthStore();
   const { currentCurrency, setCurrency } = useCurrencyStore();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
   const {
     data: profile,
     error,
@@ -69,6 +77,7 @@ const Settings: React.FC = () => {
   const [profileForm, setProfileForm] = useState({
     username: '',
     email: '',
+    address: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -76,24 +85,34 @@ const Settings: React.FC = () => {
   // Settings form state
   const [settings, setSettings] = useState({
     currency: currentCurrency,
-    theme: 'light',
     notifications: true,
   });
+
+  // Update settings form when data changes
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      currency: currentCurrency,
+    }));
+  }, [currentCurrency]);
 
   // Update form when profile data is loaded
   useEffect(() => {
     if (profile) {
       console.log('Profile data:', profile);
+      console.log('User role:', authUser?.role);
       console.log('Avatar URL:', profile.avatarUrl);
       console.log('Full Avatar URL:', getAvatarUrl(profile.avatarUrl));
+      console.log('Client data:', profile.client);
       setProfileForm({
         username: profile.username,
         email: profile.email,
+        address: profile.client?.address || '',
         newPassword: '',
         confirmPassword: '',
       });
     }
-  }, [profile]);
+  }, [profile, authUser]);
 
   const handleProfileUpdate = async () => {
     try {
@@ -112,6 +131,7 @@ const Settings: React.FC = () => {
       const updateData: any = {
         username: profileForm.username,
         email: profileForm.email,
+        address: profileForm.address,
       };
 
       if (profileForm.newPassword) {
@@ -382,6 +402,18 @@ const Settings: React.FC = () => {
                       }
                       required
                     />
+
+                    {authUser?.role === 'client' && (
+                      <TextInput
+                        label="Address"
+                        value={profileForm.address}
+                        onChange={(e) =>
+                          setProfileForm((prev) => ({ ...prev, address: e.target.value }))
+                        }
+                        placeholder="Enter your address"
+                        description="Your client address"
+                      />
+                    )}
                   </Stack>
                 </Group>
 
@@ -447,10 +479,12 @@ const Settings: React.FC = () => {
                     { value: 'dark', label: 'Dark' },
                     { value: 'auto', label: 'Auto (System)' },
                   ]}
-                  value={settings.theme}
-                  onChange={(value) =>
-                    setSettings((prev) => ({ ...prev, theme: value || 'light' }))
-                  }
+                  value={colorScheme}
+                  onChange={(value) => {
+                    if (value) {
+                      setColorScheme(value as 'light' | 'dark' | 'auto');
+                    }
+                  }}
                 />
 
                 <Group justify="flex-end">

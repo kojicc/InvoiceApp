@@ -8,6 +8,7 @@ interface User {
   username: string;
   email: string;
   role: string;
+  clientId?: number;
   avatarUrl?: string;
 }
 
@@ -21,6 +22,9 @@ interface AuthState {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  setUser: (user: User) => void;
+  setToken: (token: string) => void;
+  setAuthData: (user: User, token: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -43,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
             username: user.username,
             email: user.email,
             role: user.role,
+            clientId: user.clientId,
           };
 
           // Set Authorization header for future requests
@@ -115,6 +120,29 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
+      },
+
+      setUser: (user: User) => {
+        set({ user, isAuthenticated: true });
+      },
+
+      setToken: (token: string) => {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        set({ token, isAuthenticated: true });
+      },
+
+      // Method to set both user and token together (for OAuth)
+      setAuthData: (user: User, token: string) => {
+        console.log('🔐 setAuthData called with:', { user, token: token.substring(0, 20) + '...' });
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        console.log('🔗 Authorization header set');
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        console.log('✅ Auth state updated:', { isAuthenticated: true, userId: user.id });
       },
     }),
     {

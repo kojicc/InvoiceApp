@@ -48,6 +48,21 @@ router.post("/login", async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(400).json({ message: "User not found" });
 
+    // Check if user has a password (not OAuth-only user)
+    if (!user.password) {
+      return res.status(400).json({
+        message:
+          "This account was created with OAuth. Please log in using Google or set up a password.",
+      });
+    }
+
+    // Check if email is verified for new users
+    if (!user.isEmailVerified) {
+      return res.status(400).json({
+        message: "Please verify your email before logging in.",
+      });
+    }
+
     const isValid = await comparePassword(password, user.password);
     if (!isValid)
       return res.status(401).json({ message: "Invalid credentials" });
