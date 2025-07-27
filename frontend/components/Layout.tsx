@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import {
@@ -11,6 +10,7 @@ import {
   IconSun,
   IconUsers,
 } from '@tabler/icons-react';
+import useSWR from 'swr';
 import {
   ActionIcon,
   AppShell,
@@ -25,8 +25,12 @@ import {
   UnstyledButton,
   useMantineColorScheme,
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import api from '../lib/axios';
 import { useAuthStore } from '../state/useAuthStore';
 import classes from './Layout.module.css';
+
+const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -40,10 +44,21 @@ const navigation = [
 ];
 
 export function Layout({ children }: LayoutProps) {
-  const [opened, setOpened] = useState(false);
+  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
+  const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
   const { user, logout } = useAuthStore();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
   const router = useRouter();
+
+  // Fetch fresh profile data to get updated avatar
+  const { data: profile } = useSWR('/api/profile', fetcher);
+
+  // Helper function to construct full avatar URL
+  const getAvatarUrl = (avatarUrl: string | null | undefined) => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    return `http://localhost:4000${avatarUrl}`;
+  };
 
   const handleLogout = () => {
     logout();
@@ -73,13 +88,18 @@ export function Layout({ children }: LayoutProps) {
   return (
     <AppShell
       header={{ height: 70 }}
-      navbar={{ width: 280, breakpoint: 'md', collapsed: { mobile: !opened } }}
+      navbar={{
+        width: 280,
+        breakpoint: 'md',
+        collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
+      }}
       padding="md"
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
-            <Burger opened={opened} onClick={() => setOpened(!opened)} hiddenFrom="md" size="sm" />
+            <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="md" size="sm" />
+            <Burger opened={desktopOpened} onClick={toggleDesktop} visibleFrom="md" size="sm" />
             <Title order={3} c="indigo">
               Invoice Manager
             </Title>
@@ -97,16 +117,16 @@ export function Layout({ children }: LayoutProps) {
                     <Avatar
                       size="sm"
                       color="indigo"
-                      src={user?.avatarUrl ? `http://localhost:4000${user.avatarUrl}` : undefined}
+                      src={getAvatarUrl(profile?.avatarUrl || user?.avatarUrl)}
                     >
-                      {user?.username?.charAt(0)?.toUpperCase()}
+                      {(profile?.username || user?.username)?.charAt(0)?.toUpperCase()}
                     </Avatar>
                     <div className={classes.userInfo}>
                       <Text size="sm" fw={500}>
-                        {user?.username}
+                        {profile?.username || user?.username}
                       </Text>
                       <Text size="xs" c="dimmed">
-                        {user?.role}
+                        {profile?.role || user?.role}
                       </Text>
                     </div>
                     <IconChevronDown size={14} />

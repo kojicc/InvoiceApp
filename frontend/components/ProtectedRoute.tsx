@@ -9,21 +9,28 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    console.log('🔒 ProtectedRoute check:', { isAuthenticated, user, pathname: router.pathname });
+    console.log('🔒 ProtectedRoute check:', {
+      isAuthenticated,
+      user,
+      isHydrated,
+      pathname: router.pathname,
+    });
 
-    // Check if user is not authenticated and not on login page
-    if (!isAuthenticated && router.pathname !== '/login') {
+    // Only redirect if store is hydrated and user is not authenticated
+    if (isHydrated && !isAuthenticated && router.pathname !== '/login') {
       console.log('🔒 Redirecting to login - not authenticated');
+      // Store the current path so we can redirect back after login
+      sessionStorage.setItem('returnTo', router.asPath);
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
-  // Show loading while checking authentication
-  if (!isAuthenticated && router.pathname !== '/login') {
+  // Show loading while store is rehydrating or checking authentication
+  if (!isHydrated || (!isAuthenticated && router.pathname !== '/login')) {
     return <LoadingOverlay visible overlayProps={{ radius: 'sm', blur: 2 }} />;
   }
 
