@@ -8,6 +8,7 @@ interface User {
   username: string;
   email: string;
   role: string;
+  clientId?: number;
   avatarUrl?: string;
 }
 
@@ -45,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
             username: user.username,
             email: user.email,
             role: user.role,
+            clientId: user.clientId,
           };
 
           // Set Authorization header for future requests

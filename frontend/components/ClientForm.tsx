@@ -51,7 +51,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
 
     if (!clientData.email.trim()) {
       notifications.show({
-        title: 'Validation Error', 
+        title: 'Validation Error',
         message: 'Email address is required',
         color: 'red',
       });
@@ -89,7 +89,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ onSuccess, editingClient }) => 
         // Create new client
         const response = await api.post('/api/clients', clientData);
         const responseData = response.data;
-        
+
         if (responseData.emailSent) {
           notifications.show({
             title: 'Client Created',

@@ -1,26 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { IconCheck, IconMail, IconX } from '@tabler/icons-react';
 import {
+  Alert,
+  Button,
+  Card,
   Center,
+  Loader,
+  PasswordInput,
   Stack,
   Text,
-  Title,
-  Button,
   TextInput,
-  PasswordInput,
-  Card,
-  Alert,
-  Loader,
+  Title,
 } from '@mantine/core';
-import { IconCheck, IconX, IconMail } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { useAuthStore } from '../state/useAuthStore';
 import api from '../lib/axios';
+import { useAuthStore } from '../state/useAuthStore';
 
 export default function VerifyEmail() {
   const router = useRouter();
   const { setUser, setToken } = useAuthStore();
-  const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>(
+    'loading'
+  );
   const [canSetPassword, setCanSetPassword] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [password, setPassword] = useState('');
@@ -121,7 +123,9 @@ export default function VerifyEmail() {
           <Stack align="center" gap="md">
             <Loader size="lg" />
             <Text size="lg">Verifying your email...</Text>
-            <Text size="sm" c="dimmed">Please wait while we verify your email address</Text>
+            <Text size="sm" c="dimmed">
+              Please wait while we verify your email address
+            </Text>
           </Stack>
         );
 
@@ -135,8 +139,10 @@ export default function VerifyEmail() {
 
               <Card withBorder p="lg">
                 <Stack gap="md">
-                  <Title order={3} ta="center">Set Your Password</Title>
-                  
+                  <Title order={3} ta="center">
+                    Set Your Password
+                  </Title>
+
                   <PasswordInput
                     label="Password"
                     placeholder="Enter your password"
@@ -171,9 +177,7 @@ export default function VerifyEmail() {
                 Your email has been verified and your account is ready to use.
               </Alert>
               <Text ta="center">Redirecting to login page...</Text>
-              <Button onClick={() => router.push('/login')}>
-                Go to Login
-              </Button>
+              <Button onClick={() => router.push('/login')}>Go to Login</Button>
             </Stack>
           );
         }
@@ -187,9 +191,7 @@ export default function VerifyEmail() {
             <Text ta="center" c="dimmed">
               Please contact support or request a new verification email.
             </Text>
-            <Button onClick={() => router.push('/login')}>
-              Go to Login
-            </Button>
+            <Button onClick={() => router.push('/login')}>Go to Login</Button>
           </Stack>
         );
 
@@ -203,7 +205,9 @@ export default function VerifyEmail() {
       <Stack align="center" gap="lg" maw={500}>
         <Stack align="center" gap="sm">
           <IconMail size={48} />
-          <Title order={2} ta="center">Email Verification</Title>
+          <Title order={2} ta="center">
+            Email Verification
+          </Title>
         </Stack>
         {renderContent()}
       </Stack>

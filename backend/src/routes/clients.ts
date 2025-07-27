@@ -116,25 +116,30 @@ router.put("/:id", authenticate, authorize(["admin"]), async (req, res) => {
 });
 
 // Get client invoices
-router.get("/:id/invoices", authenticate, authorize(["admin"]), async (req, res) => {
-  try {
-    const clientId = Number(req.params.id);
-    
-    const invoices = await prisma.invoice.findMany({
-      where: { clientId },
-      include: {
-        items: true,
-        payments: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-    
-    res.json(invoices);
-  } catch (error) {
-    console.error("Error fetching client invoices:", error);
-    res.status(500).json({ message: "Error fetching client invoices" });
+router.get(
+  "/:id/invoices",
+  authenticate,
+  authorize(["admin"]),
+  async (req, res) => {
+    try {
+      const clientId = Number(req.params.id);
+
+      const invoices = await prisma.invoice.findMany({
+        where: { clientId },
+        include: {
+          items: true,
+          payments: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching client invoices:", error);
+      res.status(500).json({ message: "Error fetching client invoices" });
+    }
   }
-});
+);
 
 // Delete client
 router.delete("/:id", authenticate, authorize(["admin"]), async (req, res) => {

@@ -1,6 +1,6 @@
-import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
-import nodemailer from 'nodemailer';
+import crypto from "crypto";
+import { PrismaClient } from "@prisma/client";
+import nodemailer from "nodemailer";
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const createEmailTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || '587'),
+    port: parseInt(process.env.EMAIL_PORT || "587"),
     secure: false,
     auth: {
       user: process.env.EMAIL_HOST_USER,
@@ -19,19 +19,19 @@ const createEmailTransporter = () => {
 
 // Generate verification token
 export const generateVerificationToken = (): string => {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 };
 
 // Send verification email to new client
 export const sendClientVerificationEmail = async (
-  email: string, 
-  clientName: string, 
+  email: string,
+  clientName: string,
   verificationToken: string
 ): Promise<void> => {
   const transporter = createEmailTransporter();
-  
+
   const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
-  
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -99,19 +99,19 @@ export const sendClientVerificationEmail = async (
   const mailOptions = {
     from: `"Invoice Management System" <${process.env.EMAIL_HOST_USER}>`,
     to: email,
-    subject: 'Welcome! Please verify your email and set your password',
+    subject: "Welcome! Please verify your email and set your password",
     html: htmlContent,
   };
 
   try {
     const result = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent successfully:', {
+    console.log("Verification email sent successfully:", {
       to: email,
       messageId: result.messageId,
     });
   } catch (error) {
-    console.error('Error sending verification email:', error);
-    throw new Error('Failed to send verification email');
+    console.error("Error sending verification email:", error);
+    throw new Error("Failed to send verification email");
   }
 };
 
@@ -125,7 +125,7 @@ export const verifyEmailToken = async (token: string) => {
   });
 
   if (!user) {
-    throw new Error('Invalid or expired verification token');
+    throw new Error("Invalid or expired verification token");
   }
 
   return user;
@@ -133,13 +133,13 @@ export const verifyEmailToken = async (token: string) => {
 
 // Complete email verification and set password
 export const completeEmailVerification = async (
-  token: string, 
+  token: string,
   password: string
 ): Promise<{ user: any; message: string }> => {
   const user = await verifyEmailToken(token);
-  
+
   // Hash the password (you should import your password hashing utility)
-  const { hashPassword } = await import('../utils/auth');
+  const { hashPassword } = await import("../utils/auth");
   const hashedPassword = await hashPassword(password);
 
   // Update user
@@ -161,6 +161,6 @@ export const completeEmailVerification = async (
 
   return {
     user: updatedUser,
-    message: 'Email verified and password set successfully',
+    message: "Email verified and password set successfully",
   };
 };

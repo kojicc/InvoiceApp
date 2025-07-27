@@ -85,7 +85,7 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
     try {
       const response = await api.get(`/api/clients/${clientId}/invoices`);
       const invoices = response.data;
-      const unpaidInvoices = invoices.filter((invoice: any) => 
+      const unpaidInvoices = invoices.filter((invoice: any) =>
         ['unpaid', 'overdue', 'pending'].includes(invoice.status)
       );
 
@@ -95,14 +95,18 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
           children: (
             <Stack gap="sm">
               <Text size="sm">
-                <strong>{clientName}</strong> has {unpaidInvoices.length} unpaid invoice(s) and cannot be deleted.
+                <strong>{clientName}</strong> has {unpaidInvoices.length} unpaid invoice(s) and
+                cannot be deleted.
               </Text>
               <Text size="xs" c="dimmed">
                 Please settle all unpaid invoices before attempting to delete this client:
               </Text>
               <ul style={{ margin: 0, paddingLeft: '1rem' }}>
                 {unpaidInvoices.slice(0, 3).map((invoice: any) => (
-                  <li key={invoice.id} style={{ fontSize: '12px', color: 'var(--mantine-color-dimmed)' }}>
+                  <li
+                    key={invoice.id}
+                    style={{ fontSize: '12px', color: 'var(--mantine-color-dimmed)' }}
+                  >
                     Invoice #{invoice.invoiceNo} - ${invoice.total} ({invoice.status})
                   </li>
                 ))}
@@ -116,7 +120,7 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
           ),
           labels: { confirm: 'Understood', cancel: null },
           confirmProps: { color: 'blue' },
-          cancelProps: { style: { display: 'none' } }
+          cancelProps: { style: { display: 'none' } },
         });
         return;
       }
@@ -138,9 +142,13 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
                   ⚠️ This will also permanently delete:
                 </Text>
                 <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-                  <li style={{ fontSize: '14px' }}>{totalInvoices} invoice(s) and all related data</li>
+                  <li style={{ fontSize: '14px' }}>
+                    {totalInvoices} invoice(s) and all related data
+                  </li>
                   <li style={{ fontSize: '14px' }}>All payment records</li>
-                  <li style={{ fontSize: '14px' }}>All user accounts associated with this client</li>
+                  <li style={{ fontSize: '14px' }}>
+                    All user accounts associated with this client
+                  </li>
                 </ul>
               </>
             )}
@@ -155,22 +163,22 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
           try {
             const deleteResponse = await api.delete(`/api/clients/${clientId}`);
             const deletedData = deleteResponse.data.deletedData;
-            
+
             // Revalidate clients data using SWR mutate
             mutate('/api/clients');
-            
+
             notifications.show({
               title: 'Client Deleted',
-              message: deletedData ? 
-                `Deleted client "${deletedData.client}" and ${deletedData.invoices} invoice(s), ${deletedData.items} item(s), ${deletedData.payments} payment(s), and ${deletedData.users} user(s).` :
-                `Client "${clientName}" deleted successfully`,
+              message: deletedData
+                ? `Deleted client "${deletedData.client}" and ${deletedData.invoices} invoice(s), ${deletedData.items} item(s), ${deletedData.payments} payment(s), and ${deletedData.users} user(s).`
+                : `Client "${clientName}" deleted successfully`,
               color: 'green',
             });
           } catch (error: any) {
             console.error('Error deleting client:', error);
-            
+
             const errorData = error.response?.data;
-            
+
             if (errorData?.error === 'UNPAID_INVOICES_EXIST') {
               notifications.show({
                 title: 'Cannot Delete Client',
@@ -180,7 +188,8 @@ const ClientList: React.FC<ClientListProps> = ({ onRefresh }) => {
             } else if (errorData?.error === 'FOREIGN_KEY_CONSTRAINT') {
               notifications.show({
                 title: 'Delete Failed',
-                message: 'Client has associated data that prevents deletion. Please contact support.',
+                message:
+                  'Client has associated data that prevents deletion. Please contact support.',
                 color: 'red',
               });
             } else {

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { Center, Loader, Text, Stack } from '@mantine/core';
-import { useAuthStore } from '../../state/useAuthStore';
+import { Center, Loader, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { useAuthStore } from '../../state/useAuthStore';
 
 export default function OAuthCallback() {
   const router = useRouter();
@@ -24,27 +24,32 @@ export default function OAuthCallback() {
         }
 
         if (token && typeof token === 'string') {
-          // Decode JWT to get user info
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          
-          // Set authentication state
-          setToken(token);
-          setUser({
-            id: payload.userId,
-            username: payload.username,
-            email: payload.email,
-            role: payload.role,
-            clientId: payload.clientId,
-          });
+          try {
+            // Decode JWT to get user info
+            const payload = JSON.parse(atob(token.split('.')[1]));
 
-          notifications.show({
-            title: 'Welcome!',
-            message: 'Successfully signed in with Google.',
-            color: 'green',
-          });
+            // Set authentication state
+            setToken(token);
+            setUser({
+              id: payload.userId,
+              username: payload.username,
+              email: payload.email,
+              role: payload.role,
+              clientId: payload.clientId,
+            });
 
-          // Redirect to dashboard
-          router.push('/');
+            notifications.show({
+              title: 'Welcome!',
+              message: 'Successfully signed in with Google.',
+              color: 'green',
+            });
+
+            // Redirect to dashboard
+            router.push('/');
+          } catch (jwtError) {
+            console.error('JWT parsing error:', jwtError);
+            throw new Error('Invalid token format');
+          }
         } else {
           throw new Error('No token received');
         }
@@ -69,7 +74,9 @@ export default function OAuthCallback() {
       <Stack align="center" gap="md">
         <Loader size="lg" />
         <Text size="lg">Completing sign in...</Text>
-        <Text size="sm" c="dimmed">Please wait while we verify your credentials</Text>
+        <Text size="sm" c="dimmed">
+          Please wait while we verify your credentials
+        </Text>
       </Stack>
     </Center>
   );
